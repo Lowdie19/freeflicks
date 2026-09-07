@@ -1,21 +1,21 @@
 {
-  "short_name": "PopcornHUB",
-  "name": "PopcornHUB - Stream Movies, TV & Anime",
+  "name": "Popcorn HUB",
+  "short_name": "Popcorn HUB",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#141414",
+  "theme_color": "#141414",
+  "orientation": "any",
   "icons": [
     {
-      "src": "icons/icon-192.png",
-      "type": "image/png",
-      "sizes": "192x192"
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
     },
     {
-      "src": "icons/icon-512.png",
-      "type": "image/png",
-      "sizes": "512x512"
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
     }
-  ],
-  "start_url": "/",
-  "background_color": "#0b0b0e",
-  "theme_color": "#0b0b0e",
-  "display": "standalone",
-  "orientation": "any"
+  ]
 }
