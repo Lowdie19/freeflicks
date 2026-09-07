@@ -1,10 +1,11 @@
 {
   "name": "Popcorn HUB",
-  "short_name": "Popcorn HUB",
+  "short_name": "PopcornHUB",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#141414",
-  "theme_color": "#141414",
+  "background_color": "#0b0b0e",
+  "theme_color": "#0b0b0e",
   "orientation": "any",
   "icons": [
     {
