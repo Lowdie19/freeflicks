@@ -1,6 +1,6 @@
 {
-  "name": "Popcorn HUB",
-  "short_name": "PopcornHUB",
+  "name": "PopcornHUB",
+  "short_name": "Popcorn HUB",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
