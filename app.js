@@ -26,6 +26,44 @@ try {
 const apiCache = new Map();
 let latestSearchRequestId = 0;
 
+// PWA INSTALL STATE
+let deferredPrompt = null;
+let isInstalled = false;
+
+// SPA HISTORY STATE LOCK
+let isNavigatingHistory = false;
+
+// TMDB GENRE MAP
+const GENRE_MAP = {
+  28: "Action",
+  12: "Adventure",
+  16: "Animation",
+  35: "Comedy",
+  80: "Crime",
+  99: "Documentary",
+  18: "Drama",
+  10751: "Family",
+  14: "Fantasy",
+  36: "History",
+  27: "Horror",
+  10402: "Music",
+  9648: "Mystery",
+  10749: "Romance",
+  878: "Sci-Fi",
+  10770: "TV Movie",
+  53: "Thriller",
+  10752: "War",
+  37: "Western",
+  10759: "Action & Adventure",
+  10762: "Kids",
+  10763: "News",
+  10764: "Reality",
+  10765: "Sci-Fi & Fantasy",
+  10766: "Soap",
+  10767: "Talk",
+  10768: "War & Politics"
+};
+
 /* ==========================================================================
    INITIALIZATION & EVENT LISTENERS
    ========================================================================== */
@@ -36,7 +74,104 @@ document.addEventListener("DOMContentLoaded", () => {
   updateWatchlistBadge();
   setupMobileDrawerEvents();
   setupHeroSwipe();
+  initPWA();
+  initSpaNavigation();
 });
+
+/* ==========================================================================
+   PWA SERVICE WORKER & INSTALLATION
+   ========================================================================== */
+function initPWA() {
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('service-worker.js')
+        .catch(err => console.error('ServiceWorker registration failed: ', err));
+    });
+  }
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    updateInstallButtonState();
+  });
+
+  window.addEventListener('appinstalled', () => {
+    deferredPrompt = null;
+    isInstalled = true;
+    updateInstallButtonState();
+  });
+
+  if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+    isInstalled = true;
+  }
+  updateInstallButtonState();
+}
+
+function updateInstallButtonState() {
+  const btn = document.getElementById("drawer-nav-install");
+  const btnText = document.getElementById("installBtnText");
+  if (!btn || !btnText) return;
+
+  if (isInstalled) {
+    btnText.innerText = "Installed";
+    btn.disabled = true;
+    btn.classList.add("opacity-40", "cursor-not-allowed", "pointer-events-none");
+    btn.classList.remove("hover:text-secondary", "hover:bg-zinc-900");
+  } else {
+    btnText.innerText = "Install App";
+    btn.disabled = false;
+    btn.classList.remove("opacity-40", "cursor-not-allowed", "pointer-events-none");
+    btn.classList.add("hover:text-secondary", "hover:bg-zinc-900");
+  }
+}
+
+function handleInstallAppClick() {
+  if (isInstalled) return;
+
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then((choiceResult) => {
+      if (choiceResult.outcome === 'accepted') {
+        isInstalled = true;
+        updateInstallButtonState();
+      }
+      deferredPrompt = null;
+    });
+  } else {
+    alert("To install PopcornHUB, use your browser menu and select 'Add to Home Screen' or 'Install'.");
+  }
+}
+
+/* ==========================================================================
+   SPA HISTORY & PHYSICAL BACK BUTTON HANDLING
+   ========================================================================== */
+function initSpaNavigation() {
+  history.replaceState({ pageId: "home" }, "", "#home");
+
+  window.addEventListener("popstate", (event) => {
+    isNavigatingHistory = true;
+    if (event.state && event.state.pageId) {
+      if (event.state.pageId === "detail" && event.state.item) {
+        openCardDetail(event.state.item, true);
+      } else if (event.state.pageId === "moviePlayer" && event.state.item) {
+        setupMoviePlayer(event.state.item, true);
+      } else if (event.state.pageId === "tvPlayer" && event.state.item) {
+        setupTvPlayer(event.state.item, true);
+      } else {
+        switchPage(event.state.pageId, true);
+      }
+    } else {
+      switchPage("home", true);
+    }
+    isNavigatingHistory = false;
+  });
+}
+
+function pushSpaState(pageId, item = null) {
+  if (isNavigatingHistory) return;
+  const stateData = { pageId, item };
+  history.pushState(stateData, "", `#${pageId}`);
+}
 
 /* ==========================================================================
    MOBILE DRAWER & BOTTOM NAV HELPERS
@@ -76,7 +211,7 @@ function focusMobileSearch() {
 /* ==========================================================================
    ROUTING & NAVIGATION
    ========================================================================== */
-function switchPage(pageId) {
+function switchPage(pageId, isBackEvent = false) {
   toggleMobileDrawer(false);
 
   document.querySelectorAll(".page-view").forEach(el => el.classList.add("hidden"));
@@ -84,6 +219,10 @@ function switchPage(pageId) {
 
   const targetView = document.getElementById(`${pageId}View`);
   if (targetView) targetView.classList.remove("hidden");
+
+  if (!isBackEvent) {
+    pushSpaState(pageId);
+  }
 
   // Reset Desktop Nav highlight
   document.querySelectorAll(".nav-btn").forEach(btn => btn.classList.remove("text-brand"));
@@ -162,6 +301,14 @@ function formatTMDB(list, defaultType) {
     if (resolvedType !== "movie" && resolvedType !== "tv") {
       resolvedType = i.title ? "movie" : "tv";
     }
+
+    let genreNames = [];
+    if (Array.isArray(i.genre_ids)) {
+      genreNames = i.genre_ids.map(id => GENRE_MAP[id]).filter(Boolean);
+    } else if (Array.isArray(i.genres)) {
+      genreNames = i.genres.map(g => g.name).filter(Boolean);
+    }
+
     return {
       id: i.id,
       title: i.title || i.name || "Untitled",
@@ -170,9 +317,18 @@ function formatTMDB(list, defaultType) {
       overview: i.overview || "No overview available.",
       type: resolvedType,
       rating: typeof i.vote_average === "number" && i.vote_average > 0 ? i.vote_average.toFixed(1) : "N/A",
-      year: (i.release_date || i.first_air_date || "").split("-")[0] || "2026"
+      year: (i.release_date || i.first_air_date || "").split("-")[0] || "2026",
+      genres: genreNames
     };
   });
+}
+
+function getPlayNowGenreTypeString(item) {
+  const typeLabel = item.type === "movie" ? "Movie" : "TV Series";
+  if (item.genres && item.genres.length > 0) {
+    return `${item.genres.join(" • ")} · ${typeLabel}`;
+  }
+  return typeLabel;
 }
 
 /* ==========================================================================
@@ -184,18 +340,31 @@ function renderGrid(containerId, items) {
   container.innerHTML = "";
 
   if (!items || items.length === 0) {
-    container.innerHTML = `<div class="col-span-full py-12 text-center text-zinc-500 text-sm">No titles found.</div>`;
+    container.innerHTML = `<div class="col-span-full py-12 text-center text-zinc-500 text-sm">Your watchlist is empty.</div>`;
     return;
   }
 
+  const isWatchlistPage = containerId === "watchlistGrid";
+  const isTrendingRow = containerId === "homeTrendingTodayGrid" || containerId === "homeTrendingWeekGrid";
+
   items.forEach(item => {
     const card = document.createElement("div");
-    card.className = "group bg-zinc-900 rounded-xl overflow-hidden cursor-pointer hover:-translate-y-1.5 transition duration-300 border border-zinc-800/80 hover:border-brand/50 flex flex-col min-w-[140px] sm:min-w-0";
+    card.className = "group bg-zinc-900 rounded-xl overflow-hidden cursor-pointer hover:-translate-y-1.5 transition duration-300 border border-zinc-800/80 hover:border-brand/50 flex flex-col min-w-[140px] sm:min-w-0 amber-glow";
     card.setAttribute("tabindex", "0");
     card.setAttribute("aria-label", `${item.title} (${item.year})`);
     
     card.onclick = () => openCardDetail(item);
     card.onkeydown = (e) => { if (e.key === 'Enter') openCardDetail(item); };
+
+    const isBookmarked = watchlist.some(i => i.id === item.id && i.type === item.type);
+
+    let bookmarkIconClass = isBookmarked ? 'fa-solid fa-bookmark' : 'fa-regular fa-bookmark';
+    let bookmarkTitle = isBookmarked ? 'Remove from Watchlist' : 'Add to Watchlist';
+
+    if (isWatchlistPage) {
+      bookmarkIconClass = 'fa-solid fa-trash';
+      bookmarkTitle = 'Remove from Watchlist';
+    }
 
     card.innerHTML = `
       <div class="aspect-[2/3] w-full bg-zinc-800 relative overflow-hidden">
@@ -204,13 +373,44 @@ function renderGrid(containerId, items) {
              alt="${item.title}"
              onerror="this.onerror=null; this.src='${createFallbackSVG(item.title)}';"
              class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
-        <span class="absolute top-2 right-2 bg-black/80 backdrop-blur-sm text-brand text-[10px] font-bold px-1.5 py-0.5 rounded border border-brand/30">★ ${item.rating}</span>
+        
+        <!-- Attached Ribbon Bookmark at Upper-Left (Icon Only) -->
+        <button class="bookmark-btn absolute card-bookmark-ribbon z-10 ${isBookmarked && !isWatchlistPage ? 'text-secondary' : ''}" 
+                aria-label="${bookmarkTitle}"
+                title="${bookmarkTitle}">
+          <i class="${bookmarkIconClass}"></i>
+        </button>
+
+        <!-- Rating Star Badge at Upper-Right -->
+        <div class="absolute top-2 right-2 z-10">
+          <span class="bg-black/80 backdrop-blur-sm text-brand text-[10px] font-bold px-1.5 py-0.5 rounded border border-brand/30">★ ${item.rating}</span>
+        </div>
       </div>
       <div class="p-2.5 flex flex-col justify-between flex-grow">
-        <h3 class="text-xs font-semibold truncate group-hover:text-brand transition" title="${item.title}">${item.title}</h3>
-        <p class="text-[10px] text-zinc-500 mt-0.5 uppercase tracking-wider">${item.year} • ${item.type}</p>
+        <h3 class="font-semibold truncate group-hover:text-brand transition trending-card-title ${isTrendingRow ? 'text-sm' : 'text-xs'}" title="${item.title}">${item.title}</h3>
+        <p class="text-[10px] text-zinc-500 mt-0.5 uppercase tracking-wider trending-card-info">${item.year} • ${item.type}</p>
       </div>
     `;
+
+    const bookmarkBtn = card.querySelector(".bookmark-btn");
+    if (bookmarkBtn) {
+      bookmarkBtn.onclick = (e) => {
+        e.stopPropagation();
+        if (isWatchlistPage) {
+          card.classList.add("card-watchlist-removing");
+          setTimeout(() => {
+            toggleWatchlist(item);
+          }, 250);
+        } else {
+          toggleWatchlist(item);
+          const nowBookmarked = watchlist.some(i => i.id === item.id && i.type === item.type);
+          bookmarkBtn.innerHTML = `<i class="${nowBookmarked ? 'fa-solid fa-bookmark' : 'fa-regular fa-bookmark'}"></i>`;
+          bookmarkBtn.className = `bookmark-btn absolute card-bookmark-ribbon z-10 ${nowBookmarked ? 'text-secondary' : ''}`;
+          bookmarkBtn.title = nowBookmarked ? 'Remove from Watchlist' : 'Add to Watchlist';
+        }
+      };
+    }
+
     container.appendChild(card);
   });
 }
@@ -241,7 +441,7 @@ function startHeroTimer() {
   if (heroTimer) clearInterval(heroTimer);
   heroTimer = setInterval(() => {
     nextHeroSlide();
-  }, 5000);
+  }, 6000); // Balanced timer for smooth viewing
 }
 
 function nextHeroSlide() {
@@ -349,8 +549,8 @@ function updateHeroWatchlistBtn(item) {
   if (!btn) return;
   const isSaved = watchlist.some(i => i.id === item.id && i.type === item.type);
   if (isSaved) {
-    btn.innerHTML = `<i class="fa-solid fa-check text-brand"></i> IN WATCHLIST`;
-    btn.className = "bg-brand/20 border border-brand text-brand font-extrabold px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl flex items-center gap-2 text-xs sm:text-sm transition active:scale-95";
+    btn.innerHTML = `<i class="fa-solid fa-check text-secondary"></i> WATCHLIST`;
+    btn.className = "bg-secondary/20 border border-secondary text-secondary font-extrabold px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl flex items-center gap-2 text-xs sm:text-sm transition active:scale-95";
   } else {
     btn.innerHTML = `<i class="fa-solid fa-plus mr-1"></i> WATCHLIST`;
     btn.className = "glass-btn text-white font-extrabold px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl flex items-center gap-2 text-xs sm:text-sm transition active:scale-95";
@@ -529,9 +729,12 @@ function setupCatalogFilters() {
 /* ==========================================================================
    DETAIL VIEW & TRAILERS
    ========================================================================== */
-async function openCardDetail(item) {
+async function openCardDetail(item, isBackEvent = false) {
   activeItem = item;
-  switchPage("detail");
+  switchPage("detail", isBackEvent);
+  if (!isBackEvent) {
+    pushSpaState("detail", item);
+  }
 
   document.getElementById("detailTitle").innerText = item.title;
   document.getElementById("detailOverview").innerText = item.overview;
@@ -540,9 +743,14 @@ async function openCardDetail(item) {
   detailPoster.src = item.poster;
   detailPoster.onerror = () => { detailPoster.src = createFallbackSVG(item.title); };
 
-  document.getElementById("detailBadgeType").innerText = item.type.toUpperCase();
+  document.getElementById("detailBadgeType").innerText = item.type === "movie" ? "MOVIE" : "TV SERIES";
   document.getElementById("detailBadgeRating").innerText = `★ ${item.rating}`;
   document.getElementById("detailBadgeYear").innerText = item.year;
+
+  const genresEl = document.getElementById("detailGenres");
+  if (genresEl) {
+    genresEl.innerText = (item.genres && item.genres.length > 0) ? item.genres.join(" • ") : "";
+  }
 
   updateDetailWatchlistButton();
   document.getElementById("detailWatchlistBtn").onclick = () => toggleWatchlist(item);
@@ -596,8 +804,8 @@ function updateDetailWatchlistButton() {
 
   const isSaved = watchlist.some(i => i.id === activeItem.id && i.type === activeItem.type);
   if (isSaved) {
-    btn.innerHTML = `<i class="fa-solid fa-check text-brand"></i> IN WATCHLIST`;
-    btn.className = "bg-brand/20 border border-brand text-brand font-extrabold px-6 py-3 rounded-xl flex items-center gap-2 text-sm transition";
+    btn.innerHTML = `<i class="fa-solid fa-check text-secondary"></i> WATCHLIST`;
+    btn.className = "bg-secondary/20 border border-secondary text-secondary font-extrabold px-6 py-3 rounded-xl flex items-center gap-2 text-sm transition";
   } else {
     btn.innerHTML = `<i class="fa-solid fa-plus mr-1"></i> WATCHLIST`;
     btn.className = "bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 font-extrabold px-6 py-3 rounded-xl flex items-center gap-2 text-sm transition";
@@ -635,9 +843,18 @@ function launchPlayer(item) {
   }
 }
 
-function setupMoviePlayer(item) {
-  switchPage("moviePlayer");
+function setupMoviePlayer(item, isBackEvent = false) {
+  switchPage("moviePlayer", isBackEvent);
+  if (!isBackEvent) {
+    pushSpaState("moviePlayer", item);
+  }
+
   document.getElementById("moviePlayerTitle").innerText = item.title;
+  
+  const movieContextTitle = document.getElementById("moviePlayerContextTitle");
+  if (movieContextTitle) {
+    movieContextTitle.innerText = item.title;
+  }
 
   renderServers("movieServerList", (srv) => {
     currentServer = srv;
@@ -654,11 +871,21 @@ function loadMovieIframe(id) {
   document.getElementById("movieIframe").src = url;
 }
 
-async function setupTvPlayer(item) {
-  switchPage("tvPlayer");
+async function setupTvPlayer(item, isBackEvent = false) {
+  switchPage("tvPlayer", isBackEvent);
+  if (!isBackEvent) {
+    pushSpaState("tvPlayer", item);
+  }
+
   document.getElementById("tvPlayerTitle").innerText = item.title;
+
   currentSeason = 1;
   currentEpisode = 1;
+
+  const tvContextDetail = document.getElementById("tvPlayerContextDetail");
+  if (tvContextDetail) {
+    tvContextDetail.innerText = `Season ${currentSeason} Episode ${currentEpisode}`;
+  }
 
   renderServers("tvServerList", (srv) => {
     currentServer = srv;
@@ -686,6 +913,10 @@ async function setupTvPlayer(item) {
     btn.onclick = () => {
       currentSeason = s.season_number;
       currentEpisode = 1;
+
+      if (tvContextDetail) {
+        tvContextDetail.innerText = `Season ${currentSeason} Episode ${currentEpisode}`;
+      }
       
       document.querySelectorAll("#seasonTabs button").forEach(b => {
         b.className = "px-4 py-2 rounded-lg font-bold text-xs transition bg-zinc-800 text-zinc-300 hover:bg-zinc-700";
@@ -713,6 +944,10 @@ function renderTvEpisodes(tvId, episodeCount) {
     epBtn.className = `p-3 rounded-xl text-left flex items-center gap-3 transition border ${e === currentEpisode ? 'bg-zinc-800 border-brand' : 'bg-zinc-900 border-zinc-800 hover:border-brand/50'}`;
     epBtn.onclick = () => {
       currentEpisode = e;
+      const tvContextDetail = document.getElementById("tvPlayerContextDetail");
+      if (tvContextDetail) {
+        tvContextDetail.innerText = `Season ${currentSeason} Episode ${currentEpisode}`;
+      }
       document.querySelectorAll("#episodesGrid button").forEach(b => {
         b.className = "bg-zinc-900 border border-zinc-800 hover:border-brand/50 p-3 rounded-xl text-left flex items-center gap-3 transition";
       });
