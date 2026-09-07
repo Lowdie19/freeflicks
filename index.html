@@ -80,21 +80,17 @@
       
       <!-- PREMIUM CAROUSEL HERO BANNER -->
       <header id="heroBanner" class="relative w-full h-[55vh] sm:h-[65vh] md:h-[80vh] overflow-hidden bg-zinc-950 flex items-end">
-        <!-- Background Backdrops -->
         <div id="heroBg" class="hero-bg absolute inset-0 bg-cover bg-center"></div>
         <div class="absolute inset-0 bg-gradient-to-t from-[#0b0b0e] via-[#0b0b0e]/50 to-transparent"></div>
         <div class="absolute inset-0 bg-gradient-to-r from-[#0b0b0e] via-[#0b0b0e]/40 to-transparent"></div>
 
-        <!-- Animated Content -->
         <div id="heroContainer" class="hero-active relative z-10 w-full px-4 md:px-12 pb-10 sm:pb-12 flex items-end justify-between">
           <div class="max-w-2xl space-y-3 sm:space-y-4 hero-content">
             <div class="flex items-center gap-2">
               <span class="bg-brand text-black text-[10px] font-black tracking-widest px-2.5 py-1 rounded-md uppercase">TRENDING NOW</span>
               <span id="heroBadgeYear" class="text-xs text-zinc-300 font-bold uppercase tracking-wider">MOVIE • 2026</span>
             </div>
-            <!-- Main Hero Title (Slightly Larger) -->
             <h1 id="heroTitle" class="text-3xl sm:text-5xl md:text-7xl font-black tracking-tight text-white drop-shadow-2xl uppercase leading-none line-clamp-2 italic">Loading...</h1>
-            <!-- Main Hero Overview -->
             <p id="heroOverview" class="text-zinc-300 text-xs sm:text-sm line-clamp-2 sm:line-clamp-3 leading-relaxed drop-shadow max-w-xl"></p>
             
             <div class="flex items-center gap-3 pt-2">
@@ -107,11 +103,9 @@
             </div>
           </div>
 
-          <!-- SIDE THUMBNAIL PREVIEW LIST (DESKTOP) -->
           <div id="heroThumbnails" class="hidden lg:flex flex-col gap-2.5 z-20 pb-2"></div>
         </div>
 
-        <!-- CAROUSEL INDICATOR DOTS -->
         <div id="heroDots" class="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2"></div>
       </header>
 
@@ -355,7 +349,7 @@
           <span class="text-white">Popcorn</span>
           <span class="bg-brand text-black px-1.5 py-0 rounded font-black text-lg">HUB</span>
         </div>
-        <button id="closeMobileDrawer" aria-label="Close menu" class="text-zinc-400 hover:text-white p-2">
+        <button id="closeMobileDrawer" onclick="toggleMobileDrawer(false)" aria-label="Close menu" class="text-zinc-400 hover:text-white p-2">
           <i class="fa-solid fa-xmark text-lg"></i>
         </button>
       </div>
