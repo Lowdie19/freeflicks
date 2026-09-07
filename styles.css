@@ -32,6 +32,24 @@
   border-color: rgba(181, 248, 24, 0.5);
 }
 
+/* Secondary Color Warm Amber Glow Effect */
+.amber-glow:hover {
+  box-shadow: 0 0 15px rgba(231, 179, 78, 0.35);
+  border-color: rgba(231, 179, 78, 0.5);
+}
+
+.bg-secondary {
+  background-color: rgba(231, 179, 78, 1);
+}
+
+.text-secondary {
+  color: rgba(231, 179, 78, 1);
+}
+
+.border-secondary {
+  border-color: rgba(231, 179, 78, 0.5);
+}
+
 /* PREMIUM ANIMATIONS & TRANSITIONS */
 .hero-content {
   opacity: 0;
@@ -65,6 +83,19 @@
   background: rgba(255, 255, 255, 0.2);
 }
 
+/* Hero Overview Mobile Responsive Behavior */
+@media (max-width: 767px) and (orientation: landscape) {
+  #heroOverview {
+    display: none !important;
+  }
+}
+
+@media (max-width: 767px) and (orientation: portrait) {
+  #heroOverview {
+    display: -webkit-box !important;
+  }
+}
+
 /* Card Skeleton Animation */
 @keyframes pulse {
   0%, 100% { opacity: 1; }
@@ -73,4 +104,42 @@
 
 .animate-pulse-bg {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* BOOKMARK / TRASH ICON STYLING (ICON ONLY) */
+.card-bookmark-ribbon {
+  top: 0.5rem;
+  left: 0.5rem;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0.25rem;
+  line-height: 1;
+  font-size: 1rem; /* Slightly larger icon */
+  color: rgb(161 161 170); /* Zinc color default */
+  outline: none;
+  transition: color 0.2s ease, transform 0.15s ease, opacity 0.2s ease;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Desktop Hover Interaction */
+@media (hover: hover) {
+  .card-bookmark-ribbon:hover {
+    color: rgba(231, 179, 78, 1) !important;
+  }
+}
+
+/* Mobile Press/Tap Interaction */
+.card-bookmark-ribbon:active {
+  color: rgba(231, 179, 78, 1) !important;
+  transform: scale(0.88);
+}
+
+/* WATCHLIST REMOVAL FADE ANIMATION */
+.card-watchlist-removing {
+  opacity: 0;
+  transform: scale(0.95);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
 }
