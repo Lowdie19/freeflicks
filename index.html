@@ -392,7 +392,7 @@
             <span class="text-zinc-500">|</span>
             <span id="tvPlayerContextDetail" class="text-zinc-400"></span>
           </div>
-          <h1 id="tvPlayerTitle" class="text-2xl md:text-3xl font-black uppercase text-white"></h1>
+          <h1 id="tvPlayerTitle" class="text-2xl md:text-3xl font-black uppercase text-white italic"></h1>
         </div>
       </div>
       <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-xl space-y-3">
@@ -446,44 +446,41 @@
           <div class="flex items-center gap-3">
             <i class="fa-solid fa-bookmark w-5 text-center"></i> Watchlist
           </div>
-          <span id="drawerWatchlistBadgeCount" class="hidden bg-secondary text-black font-extrabold text-[10px] px-1.5 py-0.2 rounded-full">0</span>
-        </button>
-
-        <!-- INSTALL APP MENU ITEM -->
-        <button id="drawer-nav-install" onclick="handleInstallAppClick()" class="drawer-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition text-zinc-300 hover:text-secondary hover:bg-zinc-900">
-          <i class="fa-solid fa-download w-5 text-center"></i> <span id="installBtnText">Install App</span>
+          <span id="drawerWatchlistBadgeCount" class="hidden bg-secondary text-black font-extrabold text-[10px] px-2 py-0.5 rounded-full">0</span>
         </button>
       </nav>
     </div>
 
-    <div class="text-[10px] text-zinc-500 text-center border-t border-zinc-800/80 pt-4">
-      &copy; 2026 PopcornHUB. All rights reserved.
+    <div class="pt-6 border-t border-zinc-800/80 space-y-3">
+      <button id="drawer-nav-install" onclick="handleInstallAppClick()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition text-zinc-300 hover:text-secondary hover:bg-zinc-900">
+        <i class="fa-solid fa-download w-5 text-center text-secondary"></i> <span id="installBtnText">Install App</span>
+      </button>
+      <div class="px-4 text-[11px] text-zinc-500 flex items-center justify-between font-semibold">
+        <span>PopcornHUB Web App</span>
+        <span class="text-brand">v2.0</span>
+      </div>
     </div>
   </aside>
 
-  <!-- MOBILE BOTTOM NAVIGATION BAR -->
-  <div class="fixed bottom-0 left-0 right-0 z-40 bg-[#0b0b0e]/95 backdrop-blur-md border-t border-zinc-800/80 px-4 py-2 flex items-center justify-around md:hidden">
-    <button id="bottom-nav-home" onclick="switchPage('home')" class="bottom-nav-btn flex flex-col items-center gap-1 text-brand transition active:scale-95">
-      <i class="fa-solid fa-house text-lg"></i>
-      <span class="text-[10px] font-bold">Home</span>
+  <!-- MOBILE FLOATING BACK-TO-TOP BUTTON -->
+  <button id="mobileBackToTop" aria-label="Back to top" class="fixed bottom-[72px] right-4 z-40 md:hidden opacity-0 pointer-events-none transition-all duration-300 transform translate-y-2 active:scale-95">
+    <div class="back-to-top-circle">
+      <i class="fa-solid fa-chevron-up text-xs"></i>
+    </div>
+  </button>
+
+  <!-- FIXED MOBILE BOTTOM NAVIGATION -->
+  <div class="fixed bottom-0 left-0 right-0 z-40 bg-[#0b0b0e]/95 backdrop-blur-md border-t border-zinc-800/80 flex items-center justify-around py-2.5 md:hidden">
+    <button onclick="switchPage('home')" id="bottom-nav-home" class="bottom-nav-btn text-brand flex flex-col items-center gap-1 text-[10px] font-bold">
+      <i class="fa-solid fa-house text-base"></i> Home
     </button>
-    <button id="bottom-nav-search" onclick="focusMobileSearch()" class="bottom-nav-btn flex flex-col items-center gap-1 text-zinc-400 hover:text-brand transition active:scale-95">
-      <i class="fa-solid fa-magnifying-glass text-lg"></i>
-      <span class="text-[10px] font-bold">Search</span>
+    <button onclick="focusMobileSearch()" class="bottom-nav-btn text-zinc-400 flex flex-col items-center gap-1 text-[10px] font-bold">
+      <i class="fa-solid fa-magnifying-glass text-base"></i> Search
     </button>
-    <button id="bottom-nav-menu" onclick="toggleMobileDrawer(true)" class="bottom-nav-btn flex flex-col items-center gap-1 text-zinc-400 hover:text-brand transition active:scale-95">
-      <i class="fa-solid fa-bars text-lg"></i>
-      <span class="text-[10px] font-bold">Menu</span>
+    <button onclick="toggleMobileDrawer(true)" class="bottom-nav-btn text-zinc-400 flex flex-col items-center gap-1 text-[10px] font-bold">
+      <i class="fa-solid fa-bars text-base"></i> Menu
     </button>
   </div>
-
-  <!-- FOOTER -->
-  <footer class="border-t border-zinc-800/80 py-8 text-center text-xs text-zinc-500 mt-12 bg-[#0b0b0e]">
-    <div class="space-y-2">
-      <p class="text-zinc-400 font-bold">PopcornHUB Experience</p>
-      <p>&copy; 2026 PopcornHUB. All rights reserved. Powered by TMDB API.</p>
-    </div>
-  </footer>
 
   <script src="app.js"></script>
 </body>
