@@ -10,12 +10,12 @@ let currentEpisode = 1;
 
 // STREAMING PLATFORMS STATE & PROVIDER MAPPINGS (Region: PH)
 const PLATFORMS_CONFIG = [
-  { id: "netflix", name: "Netflix", providerId: 8, color: "#E50914", iconImg: "assets/netflix.png" },
+  { id: "netflix", name: "Netflix", providerId: 8, color: "#000000", iconImg: "assets/netflix.png" },
   { id: "disney", name: "Disney+", providerId: 337, color: "#113CCF", iconImg: "assets/disney.png" },
   { id: "prime", name: "Prime Video", providerId: 119, color: "#00A8E1", iconImg: "assets/primevideo.png" },
   { id: "hbo", name: "HBO Max", providerId: 1899, color: "#9e86ff", iconImg: "assets/hbomax.png" },
   { id: "viu", name: "Viu", providerId: 158, color: "#F5B919", iconImg: "assets/viu.png" },
-  { id: "vivamax", name: "VivaMax", providerId: 1618, color: "#FF7A00", iconImg: "assets/vivamax.png" }
+  { id: "vivamax", name: "VivaMax", providerId: 1618, color: "#000000", iconImg: "assets/vivamax.png" }
 ];
 
 let selectedPlatform = null;
@@ -120,7 +120,47 @@ document.addEventListener("DOMContentLoaded", () => {
   setupHeroSwipe();
   initPWA();
   initSpaNavigation();
+  initBackToTopButton();
 });
+
+/* ==========================================================================
+   MOBILE FLOATING BACK-TO-TOP BUTTON
+   ========================================================================== */
+function initBackToTopButton() {
+  const btn = document.getElementById("mobileBackToTop");
+  if (!btn) return;
+
+  let ticking = false;
+
+  const checkScrollPosition = () => {
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    
+    // Appear around halfway through page scroll (threshold: ~45% or at least 350px)
+    if (docHeight > 0 && (scrollTop / docHeight >= 0.45 || scrollTop > 500)) {
+      btn.classList.remove("opacity-0", "pointer-events-none", "translate-y-2");
+      btn.classList.add("opacity-100", "translate-y-0");
+    } else {
+      btn.classList.remove("opacity-100", "translate-y-0");
+      btn.classList.add("opacity-0", "pointer-events-none", "translate-y-2");
+    }
+    ticking = false;
+  };
+
+  window.addEventListener("scroll", () => {
+    if (!ticking) {
+      window.requestAnimationFrame(checkScrollPosition);
+      ticking = true;
+    }
+  }, { passive: true });
+
+  btn.addEventListener("click", () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+  });
+}
 
 /* ==========================================================================
    PWA SERVICE WORKER & INSTALLATION
