@@ -1,4 +1,4 @@
-const CACHE_NAME = "PopcornHUB-v4";
+const CACHE_NAME = "PopcornHUB-v5";
 
 const ASSETS = [
   "./index.html",
