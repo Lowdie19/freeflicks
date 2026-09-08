@@ -85,11 +85,11 @@
 
 /* PROMO BANNER ICON STYLING */
 .promo-title-icon {
-  height: 1em;
+  height: 1.25em;
   width: auto;
   display: inline-block;
   vertical-align: middle;
-  transform: rotate(75deg);
+  transform: rotate(-30deg);
   object-fit: contain;
 }
 
@@ -276,4 +276,26 @@
 .platform-back-btn:hover .platform-back-text,
 .platform-back-btn:focus-visible .platform-back-text {
   color: #b5f818;
+}
+
+/* MOBILE FLOATING BACK-TO-TOP CIRCLE DESIGN */
+.back-to-top-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(11, 11, 14, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid #52525b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a1a1aa;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: border-color 0.25s ease, color 0.25s ease, transform 0.25s ease, background-color 0.25s ease;
+}
+
+#mobileBackToTop:active .back-to-top-circle {
+  border-color: #b5f818;
+  color: #b5f818;
+  background: rgba(18, 18, 18, 0.95);
 }
