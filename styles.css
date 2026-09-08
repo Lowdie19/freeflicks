@@ -83,6 +83,16 @@
   background: rgba(255, 255, 255, 0.2);
 }
 
+/* PROMO BANNER ICON STYLING */
+.promo-title-icon {
+  height: 1em;
+  width: auto;
+  display: inline-block;
+  vertical-align: middle;
+  transform: rotate(75deg);
+  object-fit: contain;
+}
+
 /* Hero Overview Mobile Responsive Behavior */
 @media (max-width: 767px) and (orientation: landscape) {
   #heroOverview {
@@ -106,7 +116,7 @@
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* BOOKMARK / TRASH ICON STYLING (ICON ONLY) */
+/* BOOKMARK / TRASH ICON STYLING */
 .card-bookmark-ribbon {
   top: 0.5rem;
   left: 0.5rem;
@@ -115,22 +125,20 @@
   box-shadow: none !important;
   padding: 0.25rem;
   line-height: 1;
-  font-size: 1rem; /* Slightly larger icon */
-  color: rgb(161 161 170); /* Zinc color default */
+  font-size: 1rem;
+  color: rgb(161 161 170);
   outline: none;
   transition: color 0.2s ease, transform 0.15s ease, opacity 0.2s ease;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Desktop Hover Interaction */
 @media (hover: hover) {
   .card-bookmark-ribbon:hover {
     color: rgba(231, 179, 78, 1) !important;
   }
 }
 
-/* Mobile Press/Tap Interaction */
 .card-bookmark-ribbon:active {
   color: rgba(231, 179, 78, 1) !important;
   transform: scale(0.88);
@@ -142,4 +150,130 @@
   transform: scale(0.95);
   transition: opacity 0.25s ease, transform 0.25s ease;
   pointer-events: none;
+}
+
+/* STREAMING PLATFORMS HOVER GLOW */
+.platform-card-glow:hover {
+  box-shadow: 0 0 20px rgba(181, 248, 24, 0.15);
+}
+
+/* MINIMALIST LOAD MORE BUTTON DESIGN */
+.load-more-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px 16px;
+  outline: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.2s ease;
+}
+
+.load-more-btn:active {
+  transform: scale(0.95);
+}
+
+.load-more-circle {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid #52525b; /* Thin grey outline */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a1a1aa; /* Secondary grey chevron */
+  margin-bottom: 6px;
+  transition: border-color 0.25s ease, color 0.25s ease, transform 0.25s ease;
+}
+
+.load-more-text {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #a1a1aa;
+  text-transform: uppercase;
+  transition: color 0.25s ease;
+}
+
+/* Hover & Active States (Transitions to Primary Brand Color: #b5f818) */
+.load-more-btn:hover .load-more-circle,
+.load-more-btn:focus-visible .load-more-circle {
+  border-color: #b5f818;
+  color: #b5f818;
+  transform: translateY(2px);
+}
+
+.load-more-btn:hover .load-more-text,
+.load-more-btn:focus-visible .load-more-text {
+  color: #b5f818;
+}
+
+/* Loading State Animation */
+.load-more-btn.is-loading .load-more-circle {
+  border-color: #b5f818;
+  color: #b5f818;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* MINIMALIST < PLATFORM BACK BUTTON DESIGN */
+.platform-back-btn {
+  display: inline-flex;
+  flex-direction: column; /* text goes below circle */
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px 12px;
+  outline: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.2s ease;
+  gap: 5px; /* space between circle and text */
+}
+
+.platform-back-btn:active {
+  transform: scale(0.95);
+}
+
+.platform-back-circle {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid #52525b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a1a1aa;
+  transition: border-color 0.25s ease, color 0.25s ease, transform 0.25s ease;
+}
+
+.platform-back-text {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #a1a1aa;
+  text-transform: uppercase;
+  transition: color 0.25s ease;
+}
+
+.platform-back-btn:hover .platform-back-circle,
+.platform-back-btn:focus-visible .platform-back-circle {
+  border-color: #b5f818;
+  color: #b5f818;
+  transform: translateY(-2px); /* moves upward instead of left */
+}
+
+.platform-back-btn:hover .platform-back-text,
+.platform-back-btn:focus-visible .platform-back-text {
+  color: #b5f818;
 }
