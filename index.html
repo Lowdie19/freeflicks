@@ -50,6 +50,7 @@
         <button onclick="switchPage('home')" id="nav-home" class="nav-btn text-brand transition"><i class="fa-solid fa-house text-xs mr-1"></i> Home</button>
         <button onclick="switchPage('movies')" id="nav-movies" class="nav-btn hover:text-brand transition"><i class="fa-solid fa-film text-xs mr-1"></i> Movies</button>
         <button onclick="switchPage('tv')" id="nav-tv" class="nav-btn hover:text-brand transition"><i class="fa-solid fa-tv text-xs mr-1"></i> TV Series</button>
+        <button onclick="switchPage('platforms')" id="nav-platforms" class="nav-btn hover:text-brand transition"><i class="fa-solid fa-layer-group text-xs mr-1"></i> Streaming Platforms</button>
         <button onclick="switchPage('watchlist')" id="nav-watchlist" class="nav-btn hover:text-brand transition flex items-center gap-1">
           <i class="fa-solid fa-bookmark text-xs mr-1"></i> Watchlist
           <span id="watchlistBadgeCount" class="hidden bg-secondary text-black font-extrabold text-[10px] px-1.5 py-0.2 rounded-full">0</span>
@@ -73,6 +74,7 @@
     <section id="searchView" class="hidden px-4 md:px-10 py-6 space-y-4">
       <h2 class="text-xl font-bold border-l-4 border-brand pl-3">Search Results</h2>
       <div id="searchResultsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+      <div id="searchLoadMoreContainer" class="pt-4 flex justify-center"></div>
     </section>
 
     <!-- 1. HOME VIEW -->
@@ -92,7 +94,7 @@
               <span class="bg-brand text-black text-[10px] font-black tracking-widest px-2.5 py-1 rounded-md uppercase">TRENDING NOW</span>
               <span id="heroBadgeYear" class="text-xs text-zinc-300 font-bold uppercase tracking-wider">MOVIE • 2026</span>
             </div>
-            <!-- Main Hero Title (Slightly Larger) -->
+            <!-- Main Hero Title -->
             <h1 id="heroTitle" class="text-3xl sm:text-5xl md:text-7xl font-black tracking-tight text-white drop-shadow-2xl uppercase leading-none line-clamp-2 italic">Loading...</h1>
             <!-- Main Hero Overview -->
             <p id="heroOverview" class="text-zinc-300 text-xs sm:text-sm line-clamp-2 sm:line-clamp-3 leading-relaxed drop-shadow max-w-xl"></p>
@@ -118,8 +120,9 @@
       <!-- PROMO BANNER -->
       <section class="px-4 md:px-10">
         <div class="bg-gradient-to-r from-zinc-900 via-zinc-900/90 to-zinc-900 border border-brand/30 rounded-2xl p-6 sm:p-8 text-center space-y-2 relative overflow-hidden">
-          <h2 class="text-2xl md:text-4xl font-black tracking-tight">
-            <span class="text-white">POPCORN</span><span class="text-brand">HUB</span>
+          <h2 class="text-2xl md:text-4xl font-black tracking-tight flex items-center justify-center gap-2 sm:gap-3">
+            <img src="icon.png" alt="PopcorHuB Icon" class="promo-title-icon" />
+            <span><span class="text-white">POPCORN</span><span class="text-brand">HUB</span></span>
           </h2>
           <p class="text-xs md:text-sm text-zinc-400">The Official Home for Free Movies & TV Series Streaming</p>
         </div>
@@ -202,6 +205,7 @@
       </div>
 
       <div id="moviesCatalogGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+      <div id="moviesSeeMoreContainer" class="pt-4 flex justify-center"></div>
     </div>
 
     <!-- 3. TV SERIES CATALOG VIEW -->
@@ -235,6 +239,70 @@
       </div>
 
       <div id="tvCatalogGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+      <div id="tvSeeMoreContainer" class="pt-4 flex justify-center"></div>
+    </div>
+
+    <!-- STREAMING PLATFORMS SELECTION VIEW -->
+    <div id="platformsView" class="page-view hidden px-4 md:px-10 py-8 space-y-6">
+      <div>
+        <h1 class="text-3xl font-black text-white uppercase tracking-tight">Streaming Platforms</h1>
+        <p class="text-xs text-zinc-400 mt-1">Select a streaming service to view its catalog available in the Philippines.</p>
+      </div>
+      <div id="platformsSelectionGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-4"></div>
+    </div>
+
+    <!-- DYNAMIC PLATFORM CATALOG VIEW -->
+    <div id="platformCatalogView" class="page-view hidden px-4 md:px-10 py-8 space-y-6">
+      <div class="flex items-center justify-between border-b border-zinc-800 pb-4">
+        <div class="flex items-center gap-4">
+          <button onclick="switchPage('platforms')" class="platform-back-btn" aria-label="Go back to Streaming Platforms">
+            <div class="platform-back-circle">
+              <i class="fa-solid fa-arrow-left text-xs"></i>
+            </div>
+            <span class="platform-back-text">PLATFORMS</span>
+          </button>
+          <div>
+            <h1 id="platformCatalogTitle" class="text-2xl md:text-3xl font-black text-white uppercase tracking-tight">Platform</h1>
+            <p class="text-xs text-zinc-400 mt-0.5">Explore amazing movies & TV Series available on this streaming platform.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-zinc-900/90 border border-zinc-800 p-3 rounded-xl flex flex-wrap items-center gap-3">
+        <input id="platformSearchFilter" type="text" placeholder="Search platform titles..." class="bg-zinc-800 text-xs px-3 py-2 rounded-lg border border-zinc-700 flex-grow focus:outline-none focus:border-brand">
+        
+        <!-- Type Filter Buttons -->
+        <div class="flex items-center bg-zinc-800 p-1 rounded-lg border border-zinc-700">
+          <button id="platformTypeAll" onclick="setPlatformTypeFilter('all')" class="px-3 py-1 text-xs font-bold rounded-md bg-brand text-black transition">All</button>
+          <button id="platformTypeMovies" onclick="setPlatformTypeFilter('movie')" class="px-3 py-1 text-xs font-bold rounded-md text-zinc-400 hover:text-white transition">Movies</button>
+          <button id="platformTypeTv" onclick="setPlatformTypeFilter('tv')" class="px-3 py-1 text-xs font-bold rounded-md text-zinc-400 hover:text-white transition">TV Series</button>
+        </div>
+
+        <select id="platformGenreFilter" class="bg-zinc-800 text-xs px-3 py-2 rounded-lg border border-zinc-700 focus:outline-none text-zinc-200">
+          <option value="">ALL GENRES</option>
+          <option value="28">Action</option>
+          <option value="12">Adventure</option>
+          <option value="16">Animation</option>
+          <option value="35">Comedy</option>
+          <option value="80">Crime</option>
+          <option value="18">Drama</option>
+          <option value="14">Fantasy</option>
+          <option value="27">Horror</option>
+          <option value="10749">Romance</option>
+          <option value="878">Sci-Fi</option>
+          <option value="53">Thriller</option>
+        </select>
+
+        <select id="platformSortFilter" class="bg-zinc-800 text-xs px-3 py-2 rounded-lg border border-zinc-700 focus:outline-none text-zinc-200">
+          <option value="popularity.desc">POPULAR</option>
+          <option value="vote_average.desc">TOP RATED</option>
+        </select>
+
+        <button id="platformFilterBtn" class="bg-brand text-black font-bold text-xs px-5 py-2 rounded-lg hover:bg-brand-hover transition">FILTER</button>
+      </div>
+
+      <div id="platformCatalogGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+      <div id="platformLoadMoreContainer" class="pt-4 flex justify-center"></div>
     </div>
 
     <!-- WATCHLIST VIEW -->
@@ -308,6 +376,7 @@
       <div class="space-y-4 pt-4">
         <h3 class="text-lg font-bold border-l-4 border-brand pl-3">You May Also Like</h3>
         <div id="movieRelatedGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4"></div>
+        <div id="movieRelatedLoadMoreContainer" class="pt-4 flex justify-center"></div>
       </div>
     </div>
 
@@ -369,6 +438,9 @@
         </button>
         <button onclick="switchPage('tv')" id="drawer-nav-tv" class="drawer-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition text-zinc-300 hover:text-brand hover:bg-zinc-900">
           <i class="fa-solid fa-tv w-5 text-center"></i> TV Series
+        </button>
+        <button onclick="switchPage('platforms')" id="drawer-nav-platforms" class="drawer-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition text-zinc-300 hover:text-brand hover:bg-zinc-900">
+          <i class="fa-solid fa-layer-group w-5 text-center"></i> Streaming Platforms
         </button>
         <button onclick="switchPage('watchlist')" id="drawer-nav-watchlist" class="drawer-nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition text-zinc-300 hover:text-brand hover:bg-zinc-900">
           <div class="flex items-center gap-3">
