@@ -8,6 +8,24 @@ let currentServer = "videasy";
 let currentSeason = 1;
 let currentEpisode = 1;
 
+// STREAMING PLATFORMS STATE & PROVIDER MAPPINGS (Region: PH)
+const PLATFORMS_CONFIG = [
+  { id: "netflix", name: "Netflix", providerId: 8, color: "#E50914", iconImg: "assets/netflix.png" },
+  { id: "disney", name: "Disney+", providerId: 337, color: "#113CCF", iconImg: "assets/disney.png" },
+  { id: "prime", name: "Prime Video", providerId: 119, color: "#00A8E1", iconImg: "assets/primevideo.png" },
+  { id: "hbo", name: "HBO Max", providerId: 1899, color: "#9e86ff", iconImg: "assets/hbomax.png" },
+  { id: "viu", name: "Viu", providerId: 158, color: "#F5B919", iconImg: "assets/viu.png" },
+  { id: "vivamax", name: "VivaMax", providerId: 1618, color: "#FF7A00", iconImg: "assets/vivamax.png" }
+];
+
+let selectedPlatform = null;
+let platformMediaType = "all"; // 'all', 'movie', 'tv'
+let platformCurrentPage = 1;
+let platformTotalPages = 1;
+let isPlatformLoadingMore = false;
+let displayedPlatformIds = new Set();
+let latestPlatformRequestId = 0;
+
 // HERO CAROUSEL STATE
 let heroItems = [];
 let currentHeroIndex = 0;
@@ -25,6 +43,31 @@ try {
 // REQUEST CACHING & RACE CONDITION CONTROL
 const apiCache = new Map();
 let latestSearchRequestId = 0;
+
+// PAGINATION / LOAD MORE / SEE MORE STATE
+let currentSearchQuery = "";
+let searchCurrentPage = 1;
+let searchTotalPages = 1;
+let isSearchLoadingMore = false;
+let displayedMovieSearchIds = new Set();
+
+let movieRelatedCurrentPage = 1;
+let movieRelatedTotalPages = 1;
+let isMovieRelatedLoadingMore = false;
+let displayedMovieRelatedIds = new Set();
+let currentMovieRelatedMovieId = null;
+
+// MOVIES PAGE PAGINATION STATE
+let moviesCurrentPage = 1;
+let moviesTotalPages = 1;
+let isMoviesLoadingMore = false;
+let displayedMoviesIds = new Set();
+
+// TV SERIES PAGE PAGINATION STATE
+let tvCurrentPage = 1;
+let tvTotalPages = 1;
+let isTvLoadingMore = false;
+let displayedTvIds = new Set();
 
 // PWA INSTALL STATE
 let deferredPrompt = null;
@@ -71,6 +114,7 @@ document.addEventListener("DOMContentLoaded", () => {
   fetchHomeData();
   setupSearch();
   setupCatalogFilters();
+  setupPlatformFilters();
   updateWatchlistBadge();
   setupMobileDrawerEvents();
   setupHeroSwipe();
@@ -157,6 +201,8 @@ function initSpaNavigation() {
         setupMoviePlayer(event.state.item, true);
       } else if (event.state.pageId === "tvPlayer" && event.state.item) {
         setupTvPlayer(event.state.item, true);
+      } else if (event.state.pageId === "platformCatalog" && event.state.platform) {
+        openPlatformCatalog(event.state.platform, true);
       } else {
         switchPage(event.state.pageId, true);
       }
@@ -167,9 +213,9 @@ function initSpaNavigation() {
   });
 }
 
-function pushSpaState(pageId, item = null) {
+function pushSpaState(pageId, extraData = null) {
   if (isNavigatingHistory) return;
-  const stateData = { pageId, item };
+  const stateData = typeof extraData === "string" ? { pageId, platform: extraData } : { pageId, item: extraData };
   history.pushState(stateData, "", `#${pageId}`);
 }
 
@@ -253,8 +299,9 @@ function switchPage(pageId, isBackEvent = false) {
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
-  if (pageId === "movies") fetchCatalog("movie", "moviesCatalogGrid");
-  if (pageId === "tv") fetchCatalog("tv", "tvCatalogGrid");
+  if (pageId === "movies") fetchMoviesCatalog(1);
+  if (pageId === "tv") fetchTvCatalog(1);
+  if (pageId === "platforms") renderPlatformsSelectionPage();
   if (pageId === "watchlist") renderWatchlistPage();
 }
 
@@ -334,13 +381,18 @@ function getPlayNowGenreTypeString(item) {
 /* ==========================================================================
    GRID RENDERING & CARDS
    ========================================================================== */
-function renderGrid(containerId, items) {
+function renderGrid(containerId, items, append = false) {
   const container = document.getElementById(containerId);
   if (!container) return;
-  container.innerHTML = "";
+
+  if (!append) {
+    container.innerHTML = "";
+  }
 
   if (!items || items.length === 0) {
-    container.innerHTML = `<div class="col-span-full py-12 text-center text-zinc-500 text-sm">Your watchlist is empty.</div>`;
+    if (!append) {
+      container.innerHTML = `<div class="col-span-full py-12 text-center text-zinc-500 text-sm">No titles found.</div>`;
+    }
     return;
   }
 
@@ -427,6 +479,264 @@ function renderGridLoading(containerId) {
 }
 
 /* ==========================================================================
+   MINIMALIST "LOAD MORE" & "SEE MORE" BUTTON UI GENERATOR
+   ========================================================================== */
+function renderLoadMoreButton(containerId, onClickHandler, buttonText = "LOAD MORE") {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  container.innerHTML = `
+    <button type="button" class="load-more-btn" aria-label="${buttonText}">
+      <div class="load-more-circle">
+        <i class="fa-solid fa-chevron-down text-xs"></i>
+      </div>
+      <span class="load-more-text">${buttonText}</span>
+    </button>
+  `;
+
+  const btn = container.querySelector(".load-more-btn");
+  if (btn) {
+    btn.onclick = onClickHandler;
+  }
+}
+
+function removeLoadMoreButton(containerId) {
+  const container = document.getElementById(containerId);
+  if (container) {
+    container.innerHTML = "";
+  }
+}
+
+function setLoadMoreState(containerId, isLoading, defaultText = "LOAD MORE") {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const btn = container.querySelector(".load-more-btn");
+  if (!btn) return;
+
+  const icon = btn.querySelector(".load-more-circle i");
+  const text = btn.querySelector(".load-more-text");
+
+  if (isLoading) {
+    btn.disabled = true;
+    btn.classList.add("is-loading");
+    if (icon) icon.className = "fa-solid fa-spinner fa-spin text-xs";
+    if (text) text.innerText = "Loading..";
+  } else {
+    btn.disabled = false;
+    btn.classList.remove("is-loading");
+    if (icon) icon.className = "fa-solid fa-chevron-down text-xs";
+    if (text) text.innerText = defaultText;
+  }
+}
+
+/* ==========================================================================
+   STREAMING PLATFORMS FEATURE
+   ========================================================================== */
+function renderPlatformsSelectionPage() {
+  const container = document.getElementById("platformsSelectionGrid");
+  if (!container) return;
+  container.innerHTML = "";
+
+  PLATFORMS_CONFIG.forEach(platform => {
+    const card = document.createElement("div");
+    card.className = "bg-zinc-900/90 rounded-xl p-5 border border-zinc-800/80 hover:border-brand/60 cursor-pointer transition duration-300 flex flex-col items-center justify-center space-y-3 platform-card-glow group";
+    card.onclick = () => openPlatformCatalog(platform.id);
+
+    card.innerHTML = `
+      <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center overflow-hidden shadow-lg group-hover:scale-110 transition duration-300" style="background-color: ${platform.color}">
+        <img src="${platform.iconImg}" alt="${platform.name}" class="w-full h-full object-contain p-2">
+      </div>
+      <div class="text-center">
+        <h3 class="font-bold text-sm text-white group-hover:text-brand transition">${platform.name}</h3>
+        <p class="text-[10px] text-zinc-500 uppercase tracking-wider mt-0.5">Catalog</p>
+      </div>
+    `;
+
+    container.appendChild(card);
+  });
+}
+
+function openPlatformCatalog(platformId, isBackEvent = false) {
+  selectedPlatform = PLATFORMS_CONFIG.find(p => p.id === platformId) || PLATFORMS_CONFIG[0];
+  platformMediaType = "all";
+  platformCurrentPage = 1;
+  platformTotalPages = 1;
+  displayedPlatformIds.clear();
+
+  switchPage("platformCatalog", isBackEvent);
+  if (!isBackEvent) {
+    pushSpaState("platformCatalog", platformId);
+  }
+
+  document.getElementById("platformCatalogTitle").innerText = selectedPlatform.name;
+  document.getElementById("platformSearchFilter").value = "";
+  document.getElementById("platformGenreFilter").value = "";
+  document.getElementById("platformSortFilter").value = "popularity.desc";
+
+  updatePlatformTypeButtonsUI();
+  fetchPlatformCatalog(1);
+}
+
+function setPlatformTypeFilter(type) {
+  platformMediaType = type;
+  updatePlatformTypeButtonsUI();
+  fetchPlatformCatalog(1);
+}
+
+function updatePlatformTypeButtonsUI() {
+  const allBtn = document.getElementById("platformTypeAll");
+  const movieBtn = document.getElementById("platformTypeMovies");
+  const tvBtn = document.getElementById("platformTypeTv");
+
+  [allBtn, movieBtn, tvBtn].forEach(btn => {
+    if (btn) {
+      btn.className = "px-3 py-1 text-xs font-bold rounded-md text-zinc-400 hover:text-white transition";
+    }
+  });
+
+  if (platformMediaType === "all" && allBtn) {
+    allBtn.className = "px-3 py-1 text-xs font-bold rounded-md bg-brand text-black transition";
+  } else if (platformMediaType === "movie" && movieBtn) {
+    movieBtn.className = "px-3 py-1 text-xs font-bold rounded-md bg-brand text-black transition";
+  } else if (platformMediaType === "tv" && tvBtn) {
+    tvBtn.className = "px-3 py-1 text-xs font-bold rounded-md bg-brand text-black transition";
+  }
+}
+
+async function fetchPlatformCatalog(page = 1) {
+  if (!selectedPlatform) return;
+  
+  const currentReqId = ++latestPlatformRequestId;
+
+  if (page === 1) {
+    renderGridLoading("platformCatalogGrid");
+    removeLoadMoreButton("platformLoadMoreContainer");
+    platformCurrentPage = 1;
+    platformTotalPages = 1;
+    displayedPlatformIds.clear();
+  }
+
+  const genre = document.getElementById("platformGenreFilter").value;
+  const sort = document.getElementById("platformSortFilter").value;
+  const query = document.getElementById("platformSearchFilter").value.trim();
+
+  // 1. Search Mode Inside Platform
+  if (query) {
+    const data = await fetchTMDB(`search/multi?query=${encodeURIComponent(query)}&page=${page}`);
+    if (currentReqId !== latestPlatformRequestId) return;
+
+    if (data && data.results) {
+      platformTotalPages = data.total_pages || 1;
+      let filtered = data.results.filter(r => r.media_type === "movie" || r.media_type === "tv");
+      if (platformMediaType !== "all") {
+        filtered = filtered.filter(r => r.media_type === platformMediaType);
+      }
+
+      const formatted = formatTMDB(filtered);
+      const uniqueItems = formatted.filter(item => {
+        const itemKey = `${item.type}_${item.id}`;
+        if (displayedPlatformIds.has(itemKey)) return false;
+        displayedPlatformIds.add(itemKey);
+        return true;
+      });
+
+      renderGrid("platformCatalogGrid", uniqueItems, page > 1);
+
+      if (platformCurrentPage < platformTotalPages) {
+        renderLoadMoreButton("platformLoadMoreContainer", handleLoadMorePlatform, "LOAD MORE");
+      } else {
+        removeLoadMoreButton("platformLoadMoreContainer");
+      }
+    } else {
+      if (page === 1) renderGrid("platformCatalogGrid", []);
+      removeLoadMoreButton("platformLoadMoreContainer");
+    }
+    return;
+  }
+
+  // 2. Discover Mode (ALL / MOVIES / TV SERIES)
+  const pId = selectedPlatform.providerId;
+  let rawItems = [];
+  let maxPages = 1;
+
+  try {
+    if (platformMediaType === "movie" || platformMediaType === "all") {
+      let movieEndpoint = `discover/movie?with_watch_providers=${pId}&watch_region=PH&sort_by=${sort}&page=${page}`;
+      if (genre) movieEndpoint += `&with_genres=${genre}`;
+      const mData = await fetchTMDB(movieEndpoint);
+      if (mData && mData.results) {
+        if (mData.total_pages > maxPages) maxPages = mData.total_pages;
+        rawItems = rawItems.concat(formatTMDB(mData.results, "movie"));
+      }
+    }
+
+    if (platformMediaType === "tv" || platformMediaType === "all") {
+      let tvEndpoint = `discover/tv?with_watch_providers=${pId}&watch_region=PH&sort_by=${sort}&page=${page}`;
+      if (genre) tvEndpoint += `&with_genres=${genre}`;
+      const tData = await fetchTMDB(tvEndpoint);
+      if (tData && tData.results) {
+        if (tData.total_pages > maxPages) maxPages = tData.total_pages;
+        rawItems = rawItems.concat(formatTMDB(tData.results, "tv"));
+      }
+    }
+
+    if (currentReqId !== latestPlatformRequestId) return;
+
+    platformTotalPages = maxPages;
+
+    const uniqueItems = rawItems.filter(item => {
+      const itemKey = `${item.type}_${item.id}`;
+      if (displayedPlatformIds.has(itemKey)) return false;
+      displayedPlatformIds.add(itemKey);
+      return true;
+    });
+
+    renderGrid("platformCatalogGrid", uniqueItems, page > 1);
+
+    if (platformCurrentPage < platformTotalPages) {
+      renderLoadMoreButton("platformLoadMoreContainer", handleLoadMorePlatform, "LOAD MORE");
+    } else {
+      removeLoadMoreButton("platformLoadMoreContainer");
+    }
+  } catch (e) {
+    if (page === 1) renderGrid("platformCatalogGrid", []);
+    removeLoadMoreButton("platformLoadMoreContainer");
+  }
+}
+
+async function handleLoadMorePlatform() {
+  if (isPlatformLoadingMore || platformCurrentPage >= platformTotalPages) return;
+
+  isPlatformLoadingMore = true;
+  setLoadMoreState("platformLoadMoreContainer", true, "LOAD MORE");
+
+  const nextPage = platformCurrentPage + 1;
+  await fetchPlatformCatalog(nextPage);
+  platformCurrentPage = nextPage;
+
+  isPlatformLoadingMore = false;
+  if (platformCurrentPage < platformTotalPages) {
+    setLoadMoreState("platformLoadMoreContainer", false, "LOAD MORE");
+  }
+}
+
+function setupPlatformFilters() {
+  const btn = document.getElementById("platformFilterBtn");
+  if (btn) {
+    btn.onclick = () => fetchPlatformCatalog(1);
+  }
+
+  const searchInput = document.getElementById("platformSearchFilter");
+  if (searchInput) {
+    let timer;
+    searchInput.addEventListener("input", () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => fetchPlatformCatalog(1), 350);
+    });
+  }
+}
+
+/* ==========================================================================
    HERO CAROUSEL SYSTEM
    ========================================================================== */
 function initHeroCarousel() {
@@ -441,7 +751,7 @@ function startHeroTimer() {
   if (heroTimer) clearInterval(heroTimer);
   heroTimer = setInterval(() => {
     nextHeroSlide();
-  }, 6000); // Balanced timer for smooth viewing
+  }, 6000);
 }
 
 function nextHeroSlide() {
@@ -618,7 +928,6 @@ async function fetchHomeData() {
   renderGridLoading("homePopularMoviesGrid");
   renderGridLoading("homePopularTvGrid");
 
-  // ROW 1: TRENDING TODAY (/trending/all/day)
   try {
     const dataToday = await fetchTMDB("trending/all/day");
     if (dataToday && dataToday.results) {
@@ -635,7 +944,6 @@ async function fetchHomeData() {
     renderRowError("homeTrendingTodayGrid", "Unable to load today's trending titles.");
   }
 
-  // ROW 2: TRENDING THIS WEEK (/trending/all/week)
   try {
     const dataWeek = await fetchTMDB("trending/all/week");
     if (dataWeek && dataWeek.results) {
@@ -647,7 +955,6 @@ async function fetchHomeData() {
     renderRowError("homeTrendingWeekGrid", "Unable to load weekly trending titles.");
   }
 
-  // ROW 3: POPULAR MOVIES (/movie/popular)
   try {
     const dataPopM = await fetchTMDB("movie/popular");
     if (dataPopM && dataPopM.results) {
@@ -659,7 +966,6 @@ async function fetchHomeData() {
     renderRowError("homePopularMoviesGrid", "Unable to load popular movies.");
   }
 
-  // ROW 4: POPULAR TV SERIES (/tv/popular)
   try {
     const dataPopTv = await fetchTMDB("tv/popular");
     if (dataPopTv && dataPopTv.results) {
@@ -679,50 +985,143 @@ function renderRowError(containerId, message) {
   }
 }
 
-async function fetchCatalog(type, targetId) {
-  renderGridLoading(targetId);
-  const endpoint = type === "movie" ? "movie/popular" : "tv/popular";
+async function fetchMoviesCatalog(page = 1) {
+  if (page === 1) {
+    renderGridLoading("moviesCatalogGrid");
+    moviesCurrentPage = 1;
+    displayedMoviesIds.clear();
+    removeLoadMoreButton("moviesSeeMoreContainer");
+  }
+
+  const genre = document.getElementById("movieGenreFilter") ? document.getElementById("movieGenreFilter").value : "";
+  const sort = document.getElementById("movieSortFilter") ? document.getElementById("movieSortFilter").value : "popularity.desc";
+  const query = document.getElementById("movieSearchFilter") ? document.getElementById("movieSearchFilter").value.trim() : "";
+
+  let endpoint = `discover/movie?sort_by=${sort}&page=${page}`;
+  if (genre) endpoint += `&with_genres=${genre}`;
+  if (query) endpoint = `search/movie?query=${encodeURIComponent(query)}&page=${page}`;
+
   const data = await fetchTMDB(endpoint);
+
   if (data && data.results) {
-    renderGrid(targetId, formatTMDB(data.results, type));
+    moviesTotalPages = data.total_pages || 1;
+    const formatted = formatTMDB(data.results, "movie");
+    const uniqueItems = formatted.filter(item => !displayedMoviesIds.has(item.id));
+    uniqueItems.forEach(item => displayedMoviesIds.add(item.id));
+
+    renderGrid("moviesCatalogGrid", uniqueItems, page > 1);
+
+    if (moviesCurrentPage < moviesTotalPages) {
+      renderLoadMoreButton("moviesSeeMoreContainer", handleSeeMoreMovies, "SEE MORE");
+    } else {
+      removeLoadMoreButton("moviesSeeMoreContainer");
+    }
   } else {
-    document.getElementById(targetId).innerHTML = `<p class="text-zinc-500 text-sm col-span-full py-8 text-center">Unable to load content catalog.</p>`;
+    if (page === 1) {
+      document.getElementById("moviesCatalogGrid").innerHTML = `<p class="text-zinc-500 text-sm col-span-full py-8 text-center">Unable to load movie catalog.</p>`;
+    }
+    removeLoadMoreButton("moviesSeeMoreContainer");
+  }
+}
+
+async function handleSeeMoreMovies() {
+  if (isMoviesLoadingMore || moviesCurrentPage >= moviesTotalPages) return;
+
+  isMoviesLoadingMore = true;
+  setLoadMoreState("moviesSeeMoreContainer", true, "SEE MORE");
+
+  const nextPage = moviesCurrentPage + 1;
+  await fetchMoviesCatalog(nextPage);
+  moviesCurrentPage = nextPage;
+
+  isMoviesLoadingMore = false;
+  if (moviesCurrentPage < moviesTotalPages) {
+    setLoadMoreState("moviesSeeMoreContainer", false, "SEE MORE");
+  }
+}
+
+async function fetchTvCatalog(page = 1) {
+  if (page === 1) {
+    renderGridLoading("tvCatalogGrid");
+    tvCurrentPage = 1;
+    displayedTvIds.clear();
+    removeLoadMoreButton("tvSeeMoreContainer");
+  }
+
+  const genre = document.getElementById("tvGenreFilter") ? document.getElementById("tvGenreFilter").value : "";
+  const sort = document.getElementById("tvSortFilter") ? document.getElementById("tvSortFilter").value : "popularity.desc";
+  const query = document.getElementById("tvSearchFilter") ? document.getElementById("tvSearchFilter").value.trim() : "";
+
+  let endpoint = `discover/tv?sort_by=${sort}&page=${page}`;
+  if (genre) endpoint += `&with_genres=${genre}`;
+  if (query) endpoint = `search/tv?query=${encodeURIComponent(query)}&page=${page}`;
+
+  const data = await fetchTMDB(endpoint);
+
+  if (data && data.results) {
+    tvTotalPages = data.total_pages || 1;
+    const formatted = formatTMDB(data.results, "tv");
+    const uniqueItems = formatted.filter(item => !displayedTvIds.has(item.id));
+    uniqueItems.forEach(item => displayedTvIds.add(item.id));
+
+    renderGrid("tvCatalogGrid", uniqueItems, page > 1);
+
+    if (tvCurrentPage < tvTotalPages) {
+      renderLoadMoreButton("tvSeeMoreContainer", handleSeeMoreTv, "SEE MORE");
+    } else {
+      removeLoadMoreButton("tvSeeMoreContainer");
+    }
+  } else {
+    if (page === 1) {
+      document.getElementById("tvCatalogGrid").innerHTML = `<p class="text-zinc-500 text-sm col-span-full py-8 text-center">Unable to load TV series catalog.</p>`;
+    }
+    removeLoadMoreButton("tvSeeMoreContainer");
+  }
+}
+
+async function handleSeeMoreTv() {
+  if (isTvLoadingMore || tvCurrentPage >= tvTotalPages) return;
+
+  isTvLoadingMore = true;
+  setLoadMoreState("tvSeeMoreContainer", true, "SEE MORE");
+
+  const nextPage = tvCurrentPage + 1;
+  await fetchTvCatalog(nextPage);
+  tvCurrentPage = nextPage;
+
+  isTvLoadingMore = false;
+  if (tvCurrentPage < tvTotalPages) {
+    setLoadMoreState("tvSeeMoreContainer", false, "SEE MORE");
   }
 }
 
 function setupCatalogFilters() {
   const movieFilterBtn = document.getElementById("movieFilterBtn");
   if (movieFilterBtn) {
-    movieFilterBtn.onclick = async () => {
-      renderGridLoading("moviesCatalogGrid");
-      const genre = document.getElementById("movieGenreFilter").value;
-      const sort = document.getElementById("movieSortFilter").value;
-      const query = document.getElementById("movieSearchFilter").value.trim();
+    movieFilterBtn.onclick = () => fetchMoviesCatalog(1);
+  }
 
-      let endpoint = `discover/movie?sort_by=${sort}`;
-      if (genre) endpoint += `&with_genres=${genre}`;
-      if (query) endpoint = `search/movie?query=${encodeURIComponent(query)}`;
-
-      const data = await fetchTMDB(endpoint);
-      renderGrid("moviesCatalogGrid", formatTMDB(data ? data.results : [], "movie"));
-    };
+  const movieSearchFilter = document.getElementById("movieSearchFilter");
+  if (movieSearchFilter) {
+    let timer;
+    movieSearchFilter.addEventListener("input", () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => fetchMoviesCatalog(1), 350);
+    });
   }
 
   const tvFilterBtn = document.getElementById("tvFilterBtn");
   if (tvFilterBtn) {
-    tvFilterBtn.onclick = async () => {
-      renderGridLoading("tvCatalogGrid");
-      const genre = document.getElementById("tvGenreFilter").value;
-      const sort = document.getElementById("tvSortFilter").value;
-      const query = document.getElementById("tvSearchFilter").value.trim();
+    tvFilterBtn.onclick = () => fetchTvCatalog(1);
+  }
 
-      let endpoint = `discover/tv?sort_by=${sort}`;
-      if (genre) endpoint += `&with_genres=${genre}`;
-      if (query) endpoint = `search/tv?query=${encodeURIComponent(query)}`;
-
-      const data = await fetchTMDB(endpoint);
-      renderGrid("tvCatalogGrid", formatTMDB(data ? data.results : [], "tv"));
-    };
+  const tvSearchFilter = document.getElementById("tvSearchFilter");
+  if (tvSearchFilter) {
+    let timer;
+    tvSearchFilter.addEventListener("input", () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => fetchTvCatalog(1), 350);
+    });
   }
 }
 
@@ -1002,7 +1401,44 @@ function renderServers(containerId, onClick) {
    ========================================================================== */
 async function fetchRelated(type, id, targetId) {
   renderGridLoading(targetId);
-  
+  removeLoadMoreButton("movieRelatedLoadMoreContainer");
+
+  if (type === "movie") {
+    currentMovieRelatedMovieId = id;
+    movieRelatedCurrentPage = 1;
+    displayedMovieRelatedIds.clear();
+
+    const data = await fetchTMDB(`movie/${id}/recommendations?page=1`);
+    if (data && data.results && data.results.length > 0) {
+      movieRelatedTotalPages = data.total_pages || 1;
+      const filtered = formatTMDB(data.results.filter(i => i.id !== id), "movie");
+      filtered.forEach(item => displayedMovieRelatedIds.add(item.id));
+
+      renderGrid(targetId, filtered);
+
+      if (movieRelatedCurrentPage < movieRelatedTotalPages) {
+        renderLoadMoreButton("movieRelatedLoadMoreContainer", handleLoadMoreMovieRelated, "LOAD MORE");
+      }
+    } else {
+      const fallback = await fetchTMDB(`movie/${id}/similar?page=1`);
+      if (fallback && fallback.results && fallback.results.length > 0) {
+        movieRelatedTotalPages = fallback.total_pages || 1;
+        const filtered = formatTMDB(fallback.results.filter(i => i.id !== id), "movie");
+        filtered.forEach(item => displayedMovieRelatedIds.add(item.id));
+
+        renderGrid(targetId, filtered);
+
+        if (movieRelatedCurrentPage < movieRelatedTotalPages) {
+          renderLoadMoreButton("movieRelatedLoadMoreContainer", handleLoadMoreMovieRelated, "LOAD MORE");
+        }
+      } else {
+        document.getElementById(targetId).innerHTML = `<p class="text-zinc-500 text-xs col-span-full">No recommendations found.</p>`;
+      }
+    }
+    return;
+  }
+
+  // TV Series Recommendations (Preserved intact)
   let data = await fetchTMDB(`${type}/${id}/recommendations`);
   if (!data || !data.results || data.results.length === 0) {
     data = await fetchTMDB(`${type}/${id}/similar`);
@@ -1021,8 +1457,45 @@ async function fetchRelated(type, id, targetId) {
   }
 }
 
+async function handleLoadMoreMovieRelated() {
+  if (isMovieRelatedLoadingMore || movieRelatedCurrentPage >= movieRelatedTotalPages || !currentMovieRelatedMovieId) return;
+
+  isMovieRelatedLoadingMore = true;
+  setLoadMoreState("movieRelatedLoadMoreContainer", true, "LOAD MORE");
+
+  const nextPage = movieRelatedCurrentPage + 1;
+  let data = await fetchTMDB(`movie/${currentMovieRelatedMovieId}/recommendations?page=${nextPage}`);
+  
+  if (!data || !data.results || data.results.length === 0) {
+    data = await fetchTMDB(`movie/${currentMovieRelatedMovieId}/similar?page=${nextPage}`);
+  }
+
+  if (data && data.results && data.results.length > 0) {
+    movieRelatedCurrentPage = nextPage;
+    movieRelatedTotalPages = data.total_pages || movieRelatedTotalPages;
+
+    const formatted = formatTMDB(data.results.filter(i => i.id !== currentMovieRelatedMovieId), "movie");
+    const uniqueItems = formatted.filter(item => !displayedMovieRelatedIds.has(item.id));
+    uniqueItems.forEach(item => displayedMovieRelatedIds.add(item.id));
+
+    if (uniqueItems.length > 0) {
+      renderGrid("movieRelatedGrid", uniqueItems, true);
+    }
+
+    if (movieRelatedCurrentPage < movieRelatedTotalPages) {
+      setLoadMoreState("movieRelatedLoadMoreContainer", false, "LOAD MORE");
+    } else {
+      removeLoadMoreButton("movieRelatedLoadMoreContainer");
+    }
+  } else {
+    removeLoadMoreButton("movieRelatedLoadMoreContainer");
+  }
+
+  isMovieRelatedLoadingMore = false;
+}
+
 /* ==========================================================================
-   GLOBAL SEARCH SYSTEM
+   GLOBAL SEARCH SYSTEM WITH "LOAD MORE" PAGINATION
    ========================================================================== */
 function setupSearch() {
   const searchInput = document.getElementById("searchInput");
@@ -1046,21 +1519,91 @@ async function executeSearch(query) {
   document.querySelectorAll(".page-view").forEach(el => el.classList.add("hidden"));
   document.getElementById("searchView").classList.remove("hidden");
 
+  // Reset Movie Search Pagination for new query
+  currentSearchQuery = query;
+  searchCurrentPage = 1;
+  searchTotalPages = 1;
+  displayedMovieSearchIds.clear();
+  removeLoadMoreButton("searchLoadMoreContainer");
+
   renderGridLoading("searchResultsGrid");
 
-  const data = await fetchTMDB(`search/multi?query=${encodeURIComponent(query)}`);
+  const data = await fetchTMDB(`search/multi?query=${encodeURIComponent(query)}&page=1`);
   
   if (currentRequestId !== latestSearchRequestId) return;
 
   if (data && data.results) {
+    searchTotalPages = data.total_pages || 1;
     const results = data.results.filter(r => r.media_type === "movie" || r.media_type === "tv");
+    
+    // Store displayed movie IDs to prevent duplicates
+    results.forEach(r => {
+      if (r.media_type === "movie" || (!r.media_type && r.title)) {
+        displayedMovieSearchIds.add(r.id);
+      }
+    });
+
     renderGrid("searchResultsGrid", formatTMDB(results));
+
+    if (searchCurrentPage < searchTotalPages) {
+      renderLoadMoreButton("searchLoadMoreContainer", handleLoadMoreSearch, "LOAD MORE");
+    }
   } else {
     document.getElementById("searchResultsGrid").innerHTML = `<p class="text-zinc-500 text-sm col-span-full py-8 text-center">No matching titles found.</p>`;
   }
 }
 
+async function handleLoadMoreSearch() {
+  if (isSearchLoadingMore || searchCurrentPage >= searchTotalPages || !currentSearchQuery) return;
+
+  isSearchLoadingMore = true;
+  setLoadMoreState("searchLoadMoreContainer", true, "LOAD MORE");
+
+  const nextPage = searchCurrentPage + 1;
+  const data = await fetchTMDB(`search/multi?query=${encodeURIComponent(currentSearchQuery)}&page=${nextPage}`);
+
+  if (data && data.results) {
+    searchCurrentPage = nextPage;
+    searchTotalPages = data.total_pages || searchTotalPages;
+
+    const filtered = data.results.filter(r => r.media_type === "movie" || r.media_type === "tv");
+    const uniqueItems = [];
+
+    filtered.forEach(item => {
+      const isMovie = item.media_type === "movie" || (!item.media_type && item.title);
+      if (isMovie) {
+        if (!displayedMovieSearchIds.has(item.id)) {
+          displayedMovieSearchIds.add(item.id);
+          uniqueItems.push(item);
+        }
+      } else {
+        uniqueItems.push(item);
+      }
+    });
+
+    if (uniqueItems.length > 0) {
+      renderGrid("searchResultsGrid", formatTMDB(uniqueItems), true);
+    }
+
+    if (searchCurrentPage < searchTotalPages) {
+      setLoadMoreState("searchLoadMoreContainer", false, "LOAD MORE");
+    } else {
+      removeLoadMoreButton("searchLoadMoreContainer");
+    }
+  } else {
+    removeLoadMoreButton("searchLoadMoreContainer");
+  }
+
+  isSearchLoadingMore = false;
+}
+
 function clearSearch() {
+  currentSearchQuery = "";
+  searchCurrentPage = 1;
+  searchTotalPages = 1;
+  displayedMovieSearchIds.clear();
+  removeLoadMoreButton("searchLoadMoreContainer");
+
   document.getElementById("searchInput").value = "";
   document.getElementById("clearSearch").classList.add("hidden");
   switchPage("home");
