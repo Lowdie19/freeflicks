@@ -278,26 +278,34 @@
   color: #b5f818;
 }
 
-/* GRID LAYOUT FOR EQUAL SPACING */
+/* GRID LAYOUT FOR EQUAL SPACING (3 ACTIONS DEFAULT) */
 .nav-grid-layout {
   display: grid;
-  /* Dynamic grid setup for 3 columns + dividers */
-  grid-template-columns: 1fr auto 1fr auto 1fr 0fr;
+  grid-template-columns: 1fr auto 1fr auto 1fr 0px 0fr;
   align-items: center;
   transition: grid-template-columns 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* when the button show: devide it to 4 Equal Columns */
+/* WHEN "TOP" BUTTON IS ACTIVE (4 ACTIONS) */
 .nav-grid-layout.has-top-btn {
-  grid-template-columns: 1fr auto 1fr auto 1fr 1fr;
+  grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
 }
 
 /* DIVIDER STYLING */
 .nav-divider {
   width: 1px;
-  height: 24px;
+  height: 28px;
   background-color: rgba(255, 255, 255, 0.1);
   border-radius: 9999px;
+  transition: opacity 0.25s ease-in-out;
+}
+
+.nav-top-divider {
+  opacity: 0;
+}
+
+.nav-grid-layout.has-top-btn .nav-top-divider {
+  opacity: 1;
 }
 
 /* SMOOTH TOP WRAPPER ANIMATION */
@@ -339,4 +347,3 @@ body::after {
     #000 100%
   );
 }
-
