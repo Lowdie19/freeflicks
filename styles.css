@@ -278,24 +278,69 @@
   color: #b5f818;
 }
 
-/* MOBILE FLOATING BACK-TO-TOP CIRCLE DESIGN */
-.back-to-top-circle {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: rgba(11, 11, 14, 0.85);
-  backdrop-filter: blur(8px);
-  border: 1px solid #52525b;
-  display: flex;
+/* GRID LAYOUT FOR EQUAL SPACING */
+.nav-grid-layout {
+  display: grid;
+  /* Dynamic grid setup for 3 columns + dividers */
+  grid-template-columns: 1fr auto 1fr auto 1fr 0fr;
   align-items: center;
-  justify-content: center;
-  color: #a1a1aa;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  transition: border-color 0.25s ease, color 0.25s ease, transform 0.25s ease, background-color 0.25s ease;
+  transition: grid-template-columns 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-#mobileBackToTop:active .back-to-top-circle {
-  border-color: #b5f818;
-  color: #b5f818;
-  background: rgba(18, 18, 18, 0.95);
+/* when the button show: devide it to 4 Equal Columns */
+.nav-grid-layout.has-top-btn {
+  grid-template-columns: 1fr auto 1fr auto 1fr 1fr;
 }
+
+/* DIVIDER STYLING */
+.nav-divider {
+  width: 1px;
+  height: 24px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+}
+
+/* SMOOTH TOP WRAPPER ANIMATION */
+.nav-top-wrapper {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  opacity: 0;
+  transform: scale(0.85);
+  pointer-events: none;
+  transition: opacity 0.25s ease-in-out, transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-grid-layout.has-top-btn .nav-top-wrapper {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+/* GRADIENT SHADOW EFFECT */
+.nav-gradient-shadow {
+  box-shadow: 
+    0 12px 25px -4px rgb(0, 0, 0),          /* Dark core shadow */
+    0 20px 50px -5px rgb(0, 0, 0);    /* Soft Brand/Glow tint gradient at bottom */
+}
+
+/* CINEMATIC BOTTOM VIGNETTE OVERLAY */
+body::after {
+  content: "";
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 20vh;
+  min-height: 120px;
+  max-height: 280px;
+  pointer-events: none;
+  z-index: 30; /* Below Mobile Bottom Nav (z-40) and Drawers (z-50) */
+  background: radial-gradient(
+    100% 100% at 50% 100%,
+    rgba(11, 11, 14, 0.85) 0%,
+    rgba(11, 11, 14, 0.5) 45%,
+    rgba(11, 11, 14, 0) 100%
+  );
+}
+
