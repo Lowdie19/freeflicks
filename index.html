@@ -257,7 +257,7 @@
         <div class="flex items-center gap-4">
           <button onclick="switchPage('platforms')" class="platform-back-btn" aria-label="Go back to Streaming Platforms">
             <div class="platform-back-circle">
-              <i class="fa-solid fa-arrow-left text-xs"></i>
+              <i class="fa-solid fa-chevron-left text-xs"></i>
             </div>
             <span class="platform-back-text">PLATFORMS</span>
           </button>
@@ -462,46 +462,48 @@
     </div>
   </aside>
 
-<!-- FIXED MOBILE BOTTOM NAVIGATION WITH EQUAL GRID & DIVIDERS -->
-<div id="mobileBottomNav" class="fixed bottom-2 left-1/2 -translate-x-1/2 z-40 bg-[#0b0b0e]/85 backdrop-blur-xl border border-white/10 rounded-full px-2 py-2 md:hidden w-[92%] max-w-[380px] nav-grid-layout nav-gradient-shadow">
-
-  <!-- HOME -->
-  <button onclick="switchPage('home')" id="bottom-nav-home" class="bottom-nav-item text-brand flex flex-col items-center justify-center gap-1 active:scale-90 transition-transform duration-150 py-1">
-    <i class="fa-solid fa-house text-lg leading-none"></i>
-    <span class="text-[11px] font-medium leading-none tracking-tight">Home</span>
-  </button>
-
-  <!-- DIVIDER 1 -->
-  <div class="nav-divider"></div>
-
-  <!-- SEARCH -->
-  <button onclick="focusMobileSearch()" class="bottom-nav-item text-zinc-400 hover:text-white flex flex-col items-center justify-center gap-1 active:scale-90 transition-transform duration-150 py-1">
-    <i class="fa-solid fa-magnifying-glass text-lg leading-none"></i>
-    <span class="text-[11px] font-medium leading-none tracking-tight">Search</span>
-  </button>
-
-  <!-- DIVIDER 2 -->
-  <div class="nav-divider"></div>
-
-  <!-- MENU -->
-  <button onclick="toggleMobileDrawer(true)" class="bottom-nav-item text-zinc-400 hover:text-white flex flex-col items-center justify-center gap-1 active:scale-90 transition-transform duration-150 py-1">
-    <i class="fa-solid fa-bars text-lg leading-none"></i>
-    <span class="text-[11px] font-medium leading-none tracking-tight">Menu</span>
-  </button>
-
-  <!-- TOP BUTTON WRAPPER (Includes Divider 3 & Top Button) -->
-  <div id="mobileBackToTopWrapper" class="nav-top-wrapper">
-    <!-- DIVIDER 3 -->
-    <div class="nav-divider"></div>
+  <!-- MOBILE BOTTOM NAV -->
+  <div id="mobileBottomNav" class="md:hidden fixed bottom-3 left-3 right-3 z-40 bg-[#121216]/95 backdrop-blur-md rounded-2xl border border-zinc-800/80 px-2 py-1.5 nav-gradient-shadow nav-grid-layout">
     
-    <!-- TOP BUTTON -->
-    <button id="mobileBackToTop" aria-label="Back to top" class="bottom-nav-item text-zinc-400 hover:text-white flex flex-col items-center justify-center gap-1 active:scale-90 transition-transform duration-150 py-1 w-full">
-      <i class="fa-solid fa-chevron-up text-lg leading-none"></i>
-      <span class="text-[11px] font-medium leading-none tracking-tight">Top</span>
-    </button>
-  </div>
+    <!-- 1. HOME -->
+    <div class="flex items-center justify-center">
+      <button onclick="switchPage('home')" id="bottom-nav-home" class="bottom-nav-btn py-1 px-2 text-brand transition flex flex-col items-center justify-center gap-0.5" aria-label="Go to Home">
+        <i class="fa-solid fa-house text-base"></i>
+        <span class="text-[10px] font-bold uppercase tracking-wider">Home</span>
+      </button>
+    </div>
 
-</div>
+    <div class="nav-divider"></div>
+
+    <!-- 2. SEARCH -->
+    <div class="flex items-center justify-center">
+      <button onclick="focusMobileSearch()" class="py-1 px-2 text-zinc-400 hover:text-white transition flex flex-col items-center justify-center gap-0.5" aria-label="Quick Search">
+        <i class="fa-solid fa-magnifying-glass text-base"></i>
+        <span class="text-[10px] font-bold uppercase tracking-wider">Search</span>
+      </button>
+    </div>
+
+    <div class="nav-divider"></div>
+
+    <!-- 3. MENU -->
+    <div class="flex items-center justify-center">
+      <button onclick="toggleMobileDrawer(true)" class="py-1 px-2 text-zinc-400 hover:text-white transition flex flex-col items-center justify-center gap-0.5" aria-label="Open Drawer Menu">
+        <i class="fa-solid fa-bars text-base"></i>
+        <span class="text-[10px] font-bold uppercase tracking-wider">Menu</span>
+      </button>
+    </div>
+
+    <div id="navTopDivider" class="nav-top-divider nav-divider"></div>
+
+    <!-- 4. TOP (DYNAMICALLY APPEARS ON SCROLL) -->
+    <div class="nav-top-wrapper flex items-center justify-center">
+      <button id="mobileBackToTop" class="py-1 px-2 text-zinc-400 hover:text-white transition flex flex-col items-center justify-center gap-0.5" aria-label="Scroll Back to Top">
+        <i class="fa-solid fa-chevron-up text-base"></i>
+        <span class="text-[10px] font-bold uppercase tracking-wider">Top</span>
+      </button>
+    </div>
+
+  </div>
 
   <script src="app.js"></script>
 </body>
