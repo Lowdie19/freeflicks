@@ -123,12 +123,14 @@ document.addEventListener("DOMContentLoaded", () => {
   initBackToTopButton();
 });
 
+
 /* ==========================================================================
-   MOBILE FLOATING BACK-TO-TOP BUTTON
+   MOBILE FLOATING BACK-TO-TOP BUTTON (INSIDE BOTTOM NAV)
    ========================================================================== */
 function initBackToTopButton() {
+  const navContainer = document.getElementById("mobileBottomNav");
   const btn = document.getElementById("mobileBackToTop");
-  if (!btn) return;
+  if (!navContainer || !btn) return;
 
   let ticking = false;
 
@@ -136,14 +138,15 @@ function initBackToTopButton() {
     const scrollTop = window.scrollY || document.documentElement.scrollTop;
     const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
     
-    // Appear around halfway through page scroll (threshold: ~45% or at least 350px)
-    if (docHeight > 0 && (scrollTop / docHeight >= 0.45 || scrollTop > 500)) {
-      btn.classList.remove("opacity-0", "pointer-events-none", "translate-y-2");
-      btn.classList.add("opacity-100", "translate-y-0");
+    // Lumitaw kapag umabot sa 45% ng page o lumampas ng 500px scroll
+    const shouldShow = docHeight > 0 && (scrollTop / docHeight >= 0.45 || scrollTop > 500);
+
+    if (shouldShow) {
+      navContainer.classList.add("has-top-btn");
     } else {
-      btn.classList.remove("opacity-100", "translate-y-0");
-      btn.classList.add("opacity-0", "pointer-events-none", "translate-y-2");
+      navContainer.classList.remove("has-top-btn");
     }
+    
     ticking = false;
   };
 
@@ -290,7 +293,10 @@ function focusMobileSearch() {
   const input = document.getElementById("searchInput");
   if (input) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    input.focus();
+    // May kaunting delay para umabot sa mata mo ang click animation bago sumulpot ang keyboard
+    setTimeout(() => {
+      input.focus();
+    }, 100);
   }
 }
 
@@ -1416,8 +1422,8 @@ function renderServers(containerId, onClick) {
   if (!container) return;
 
   const servers = [
-    { id: "videasy", name: "Videasy" },
-    { id: "vidlink", name: "VidLink" }
+    { id: "videasy", name: "Nova" },
+    { id: "vidlink", name: "Vortex" }
   ];
 
   container.innerHTML = "";
