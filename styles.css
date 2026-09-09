@@ -317,11 +317,10 @@
   pointer-events: auto;
 }
 
-/* GRADIENT SHADOW EFFECT */
 .nav-gradient-shadow {
-  box-shadow: 
-    0 12px 25px -4px rgb(0, 0, 0),          /* Dark core shadow */
-    0 20px 50px -5px rgb(0, 0, 0);    /* Soft Brand/Glow tint gradient at bottom */
+  box-shadow:
+    0 12px 25px -4px rgb(0 0 0 / 0.75),
+    0 20px 50px -5px rgb(0 0 0 / 0.45);
 }
 
 /* CINEMATIC BOTTOM VIGNETTE OVERLAY */
@@ -331,16 +330,13 @@ body::after {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 20vh;
-  min-height: 120px;
-  max-height: 280px;
+  height: clamp(20px, 5vh, 50px);
   pointer-events: none;
   z-index: 30; /* Below Mobile Bottom Nav (z-40) and Drawers (z-50) */
-  background: radial-gradient(
-    100% 100% at 50% 100%,
-    rgba(11, 11, 14, 0.85) 0%,
-    rgba(11, 11, 14, 0.5) 45%,
-    rgba(11, 11, 14, 0) 100%
+  background: linear-gradient(
+    to bottom,
+    transparent 10%,
+    #000 100%
   );
 }
 
