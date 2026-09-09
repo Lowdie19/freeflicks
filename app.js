@@ -15,6 +15,7 @@ const PLATFORMS_CONFIG = [
   { id: "prime", name: "Prime Video", providerId: 119, color: "#00A8E1", iconImg: "assets/primevideo.png" },
   { id: "hbo", name: "HBO Max", providerId: 1899, color: "#9e86ff", iconImg: "assets/hbomax.png" },
   { id: "viu", name: "Viu", providerId: 158, color: "#F5B919", iconImg: "assets/viu.png" },
+  { id: "crunchyroll", name: "Crunchyroll", providerId: 283, color: "#F47521", iconImg: "assets/crunchyroll.png" },
   { id: "vivamax", name: "VivaMax", providerId: 1618, color: "#000000", iconImg: "assets/vivamax.png" }
 ];
 
@@ -395,6 +396,8 @@ function formatTMDB(list, defaultType) {
       resolvedType = i.title ? "movie" : "tv";
     }
 
+    let genreIds = Array.isArray(i.genre_ids) ? i.genre_ids : (Array.isArray(i.genres) ? i.genres.map(g => g.id) : []);
+
     let genreNames = [];
     if (Array.isArray(i.genre_ids)) {
       genreNames = i.genre_ids.map(id => GENRE_MAP[id]).filter(Boolean);
@@ -411,7 +414,8 @@ function formatTMDB(list, defaultType) {
       type: resolvedType,
       rating: typeof i.vote_average === "number" && i.vote_average > 0 ? i.vote_average.toFixed(1) : "N/A",
       year: (i.release_date || i.first_air_date || "").split("-")[0] || "2026",
-      genres: genreNames
+      genres: genreNames,
+      genre_ids: genreIds
     };
   });
 }
@@ -422,6 +426,57 @@ function getPlayNowGenreTypeString(item) {
     return `${item.genres.join(" • ")} · ${typeLabel}`;
   }
   return typeLabel;
+}
+
+/* ==========================================================================
+   DYNAMIC GENRE FILTER HELPER
+   ========================================================================== */
+function updateDynamicGenreOptions(selectElementId, rawItems) {
+  const selectEl = document.getElementById(selectElementId);
+  if (!selectEl) return;
+
+  const currentSelected = selectEl.value;
+  const presentGenreIds = new Set();
+
+  if (Array.isArray(rawItems)) {
+    rawItems.forEach(item => {
+      if (Array.isArray(item.genre_ids)) {
+        item.genre_ids.forEach(id => presentGenreIds.add(Number(id)));
+      }
+    });
+  }
+
+  selectEl.innerHTML = "";
+
+  const defaultOption = document.createElement("option");
+  defaultOption.value = "";
+  defaultOption.textContent = "ALL GENRES";
+  selectEl.appendChild(defaultOption);
+
+  const sortedGenreIds = Array.from(presentGenreIds)
+    .filter(id => GENRE_MAP[id])
+    .sort((a, b) => GENRE_MAP[a].localeCompare(GENRE_MAP[b]));
+
+  let selectedStillExists = false;
+
+  sortedGenreIds.forEach(id => {
+    const option = document.createElement("option");
+    option.value = String(id);
+    option.textContent = GENRE_MAP[id];
+
+    if (String(id) === String(currentSelected)) {
+      option.selected = true;
+      selectedStillExists = true;
+    }
+
+    selectEl.appendChild(option);
+  });
+
+  if (selectedStillExists) {
+    selectEl.value = currentSelected;
+  } else {
+    selectEl.value = "";
+  }
 }
 
 /* ==========================================================================
@@ -662,7 +717,6 @@ async function fetchPlatformCatalog(page = 1) {
     displayedPlatformIds.clear();
   }
 
-  const genre = document.getElementById("platformGenreFilter").value;
   const sort = document.getElementById("platformSortFilter").value;
   const query = document.getElementById("platformSearchFilter").value.trim();
 
@@ -671,11 +725,23 @@ async function fetchPlatformCatalog(page = 1) {
     const data = await fetchTMDB(`search/multi?query=${encodeURIComponent(query)}&page=${page}`);
     if (currentReqId !== latestPlatformRequestId) return;
 
-    if (data && data.results) {
+    if (data && data.results && data.results.length > 0) {
       platformTotalPages = data.total_pages || 1;
       let filtered = data.results.filter(r => r.media_type === "movie" || r.media_type === "tv");
       if (platformMediaType !== "all") {
         filtered = filtered.filter(r => r.media_type === platformMediaType);
+      }
+
+      if (page === 1) {
+        updateDynamicGenreOptions("platformGenreFilter", filtered);
+      }
+
+      const activeGenreAfterUpdate = document.getElementById("platformGenreFilter").value;
+      if (activeGenreAfterUpdate) {
+        filtered = filtered.filter(r => {
+          const ids = Array.isArray(r.genre_ids) ? r.genre_ids : (Array.isArray(r.genres) ? r.genres.map(g => g.id) : []);
+          return ids.includes(Number(activeGenreAfterUpdate));
+        });
       }
 
       const formatted = formatTMDB(filtered);
@@ -688,13 +754,16 @@ async function fetchPlatformCatalog(page = 1) {
 
       renderGrid("platformCatalogGrid", uniqueItems, page > 1);
 
-      if (platformCurrentPage < platformTotalPages) {
+      if (page < platformTotalPages && uniqueItems.length > 0) {
         renderLoadMoreButton("platformLoadMoreContainer", handleLoadMorePlatform, "LOAD MORE");
       } else {
         removeLoadMoreButton("platformLoadMoreContainer");
       }
     } else {
-      if (page === 1) renderGrid("platformCatalogGrid", []);
+      if (page === 1) {
+        updateDynamicGenreOptions("platformGenreFilter", []);
+        renderGrid("platformCatalogGrid", []);
+      }
       removeLoadMoreButton("platformLoadMoreContainer");
     }
     return;
@@ -706,9 +775,24 @@ async function fetchPlatformCatalog(page = 1) {
   let maxPages = 1;
 
   try {
+    if (page === 1) {
+      let rawGenreSourceList = [];
+      if (platformMediaType === "movie" || platformMediaType === "all") {
+        const mBase = await fetchTMDB(`discover/movie?with_watch_providers=${pId}&watch_region=PH&sort_by=popularity.desc&page=1`);
+        if (mBase && mBase.results) rawGenreSourceList = rawGenreSourceList.concat(mBase.results);
+      }
+      if (platformMediaType === "tv" || platformMediaType === "all") {
+        const tBase = await fetchTMDB(`discover/tv?with_watch_providers=${pId}&watch_region=PH&sort_by=popularity.desc&page=1`);
+        if (tBase && tBase.results) rawGenreSourceList = rawGenreSourceList.concat(tBase.results);
+      }
+      updateDynamicGenreOptions("platformGenreFilter", rawGenreSourceList);
+    }
+
+    const activeGenreFilter = document.getElementById("platformGenreFilter").value;
+
     if (platformMediaType === "movie" || platformMediaType === "all") {
       let movieEndpoint = `discover/movie?with_watch_providers=${pId}&watch_region=PH&sort_by=${sort}&page=${page}`;
-      if (genre) movieEndpoint += `&with_genres=${genre}`;
+      if (activeGenreFilter) movieEndpoint += `&with_genres=${activeGenreFilter}`;
       const mData = await fetchTMDB(movieEndpoint);
       if (mData && mData.results) {
         if (mData.total_pages > maxPages) maxPages = mData.total_pages;
@@ -718,7 +802,7 @@ async function fetchPlatformCatalog(page = 1) {
 
     if (platformMediaType === "tv" || platformMediaType === "all") {
       let tvEndpoint = `discover/tv?with_watch_providers=${pId}&watch_region=PH&sort_by=${sort}&page=${page}`;
-      if (genre) tvEndpoint += `&with_genres=${genre}`;
+      if (activeGenreFilter) tvEndpoint += `&with_genres=${activeGenreFilter}`;
       const tData = await fetchTMDB(tvEndpoint);
       if (tData && tData.results) {
         if (tData.total_pages > maxPages) maxPages = tData.total_pages;
@@ -739,7 +823,7 @@ async function fetchPlatformCatalog(page = 1) {
 
     renderGrid("platformCatalogGrid", uniqueItems, page > 1);
 
-    if (platformCurrentPage < platformTotalPages) {
+    if (page < platformTotalPages && uniqueItems.length > 0) {
       renderLoadMoreButton("platformLoadMoreContainer", handleLoadMorePlatform, "LOAD MORE");
     } else {
       removeLoadMoreButton("platformLoadMoreContainer");
@@ -770,6 +854,16 @@ function setupPlatformFilters() {
   const btn = document.getElementById("platformFilterBtn");
   if (btn) {
     btn.onclick = () => fetchPlatformCatalog(1);
+  }
+
+  const genreSelect = document.getElementById("platformGenreFilter");
+  if (genreSelect) {
+    genreSelect.addEventListener("change", () => fetchPlatformCatalog(1));
+  }
+
+  const sortSelect = document.getElementById("platformSortFilter");
+  if (sortSelect) {
+    sortSelect.addEventListener("change", () => fetchPlatformCatalog(1));
   }
 
   const searchInput = document.getElementById("platformSearchFilter");
@@ -1035,29 +1129,49 @@ async function fetchMoviesCatalog(page = 1) {
   if (page === 1) {
     renderGridLoading("moviesCatalogGrid");
     moviesCurrentPage = 1;
+    moviesTotalPages = 1;
     displayedMoviesIds.clear();
     removeLoadMoreButton("moviesSeeMoreContainer");
   }
 
-  const genre = document.getElementById("movieGenreFilter") ? document.getElementById("movieGenreFilter").value : "";
   const sort = document.getElementById("movieSortFilter") ? document.getElementById("movieSortFilter").value : "popularity.desc";
   const query = document.getElementById("movieSearchFilter") ? document.getElementById("movieSearchFilter").value.trim() : "";
 
+  if (page === 1) {
+    let rawGenreSourceEndpoint = `discover/movie?sort_by=popularity.desc&page=1`;
+    if (query) rawGenreSourceEndpoint = `search/movie?query=${encodeURIComponent(query)}&page=1`;
+    const genreSourceData = await fetchTMDB(rawGenreSourceEndpoint);
+    if (genreSourceData && genreSourceData.results) {
+      updateDynamicGenreOptions("movieGenreFilter", genreSourceData.results);
+    }
+  }
+
+  const activeGenreFilter = document.getElementById("movieGenreFilter") ? document.getElementById("movieGenreFilter").value : "";
+
   let endpoint = `discover/movie?sort_by=${sort}&page=${page}`;
-  if (genre) endpoint += `&with_genres=${genre}`;
+  if (activeGenreFilter) endpoint += `&with_genres=${activeGenreFilter}`;
   if (query) endpoint = `search/movie?query=${encodeURIComponent(query)}&page=${page}`;
 
   const data = await fetchTMDB(endpoint);
 
-  if (data && data.results) {
+  if (data && data.results && data.results.length > 0) {
     moviesTotalPages = data.total_pages || 1;
-    const formatted = formatTMDB(data.results, "movie");
+    let resultsList = data.results;
+
+    if (query && activeGenreFilter) {
+      resultsList = resultsList.filter(r => {
+        const ids = Array.isArray(r.genre_ids) ? r.genre_ids : (Array.isArray(r.genres) ? r.genres.map(g => g.id) : []);
+        return ids.includes(Number(activeGenreFilter));
+      });
+    }
+
+    const formatted = formatTMDB(resultsList, "movie");
     const uniqueItems = formatted.filter(item => !displayedMoviesIds.has(item.id));
     uniqueItems.forEach(item => displayedMoviesIds.add(item.id));
 
     renderGrid("moviesCatalogGrid", uniqueItems, page > 1);
 
-    if (moviesCurrentPage < moviesTotalPages) {
+    if (page < moviesTotalPages && uniqueItems.length > 0) {
       renderLoadMoreButton("moviesSeeMoreContainer", handleSeeMoreMovies, "SEE MORE");
     } else {
       removeLoadMoreButton("moviesSeeMoreContainer");
@@ -1090,29 +1204,49 @@ async function fetchTvCatalog(page = 1) {
   if (page === 1) {
     renderGridLoading("tvCatalogGrid");
     tvCurrentPage = 1;
+    tvTotalPages = 1;
     displayedTvIds.clear();
     removeLoadMoreButton("tvSeeMoreContainer");
   }
 
-  const genre = document.getElementById("tvGenreFilter") ? document.getElementById("tvGenreFilter").value : "";
   const sort = document.getElementById("tvSortFilter") ? document.getElementById("tvSortFilter").value : "popularity.desc";
   const query = document.getElementById("tvSearchFilter") ? document.getElementById("tvSearchFilter").value.trim() : "";
 
+  if (page === 1) {
+    let rawGenreSourceEndpoint = `discover/tv?sort_by=popularity.desc&page=1`;
+    if (query) rawGenreSourceEndpoint = `search/tv?query=${encodeURIComponent(query)}&page=1`;
+    const genreSourceData = await fetchTMDB(rawGenreSourceEndpoint);
+    if (genreSourceData && genreSourceData.results) {
+      updateDynamicGenreOptions("tvGenreFilter", genreSourceData.results);
+    }
+  }
+
+  const activeGenreFilter = document.getElementById("tvGenreFilter") ? document.getElementById("tvGenreFilter").value : "";
+
   let endpoint = `discover/tv?sort_by=${sort}&page=${page}`;
-  if (genre) endpoint += `&with_genres=${genre}`;
+  if (activeGenreFilter) endpoint += `&with_genres=${activeGenreFilter}`;
   if (query) endpoint = `search/tv?query=${encodeURIComponent(query)}&page=${page}`;
 
   const data = await fetchTMDB(endpoint);
 
-  if (data && data.results) {
+  if (data && data.results && data.results.length > 0) {
     tvTotalPages = data.total_pages || 1;
-    const formatted = formatTMDB(data.results, "tv");
+    let resultsList = data.results;
+
+    if (query && activeGenreFilter) {
+      resultsList = resultsList.filter(r => {
+        const ids = Array.isArray(r.genre_ids) ? r.genre_ids : (Array.isArray(r.genres) ? r.genres.map(g => g.id) : []);
+        return ids.includes(Number(activeGenreFilter));
+      });
+    }
+
+    const formatted = formatTMDB(resultsList, "tv");
     const uniqueItems = formatted.filter(item => !displayedTvIds.has(item.id));
     uniqueItems.forEach(item => displayedTvIds.add(item.id));
 
     renderGrid("tvCatalogGrid", uniqueItems, page > 1);
 
-    if (tvCurrentPage < tvTotalPages) {
+    if (page < tvTotalPages && uniqueItems.length > 0) {
       renderLoadMoreButton("tvSeeMoreContainer", handleSeeMoreTv, "SEE MORE");
     } else {
       removeLoadMoreButton("tvSeeMoreContainer");
@@ -1147,6 +1281,16 @@ function setupCatalogFilters() {
     movieFilterBtn.onclick = () => fetchMoviesCatalog(1);
   }
 
+  const movieGenreSelect = document.getElementById("movieGenreFilter");
+  if (movieGenreSelect) {
+    movieGenreSelect.addEventListener("change", () => fetchMoviesCatalog(1));
+  }
+
+  const movieSortSelect = document.getElementById("movieSortFilter");
+  if (movieSortSelect) {
+    movieSortSelect.addEventListener("change", () => fetchMoviesCatalog(1));
+  }
+
   const movieSearchFilter = document.getElementById("movieSearchFilter");
   if (movieSearchFilter) {
     let timer;
@@ -1159,6 +1303,16 @@ function setupCatalogFilters() {
   const tvFilterBtn = document.getElementById("tvFilterBtn");
   if (tvFilterBtn) {
     tvFilterBtn.onclick = () => fetchTvCatalog(1);
+  }
+
+  const tvGenreSelect = document.getElementById("tvGenreFilter");
+  if (tvGenreSelect) {
+    tvGenreSelect.addEventListener("change", () => fetchTvCatalog(1));
+  }
+
+  const tvSortSelect = document.getElementById("tvSortFilter");
+  if (tvSortSelect) {
+    tvSortSelect.addEventListener("change", () => fetchTvCatalog(1));
   }
 
   const tvSearchFilter = document.getElementById("tvSearchFilter");
@@ -1452,6 +1606,7 @@ async function fetchRelated(type, id, targetId) {
   if (type === "movie") {
     currentMovieRelatedMovieId = id;
     movieRelatedCurrentPage = 1;
+    movieRelatedTotalPages = 1;
     displayedMovieRelatedIds.clear();
 
     const data = await fetchTMDB(`movie/${id}/recommendations?page=1`);
@@ -1462,8 +1617,10 @@ async function fetchRelated(type, id, targetId) {
 
       renderGrid(targetId, filtered);
 
-      if (movieRelatedCurrentPage < movieRelatedTotalPages) {
+      if (movieRelatedCurrentPage < movieRelatedTotalPages && filtered.length > 0) {
         renderLoadMoreButton("movieRelatedLoadMoreContainer", handleLoadMoreMovieRelated, "LOAD MORE");
+      } else {
+        removeLoadMoreButton("movieRelatedLoadMoreContainer");
       }
     } else {
       const fallback = await fetchTMDB(`movie/${id}/similar?page=1`);
@@ -1474,31 +1631,27 @@ async function fetchRelated(type, id, targetId) {
 
         renderGrid(targetId, filtered);
 
-        if (movieRelatedCurrentPage < movieRelatedTotalPages) {
+        if (movieRelatedCurrentPage < movieRelatedTotalPages && filtered.length > 0) {
           renderLoadMoreButton("movieRelatedLoadMoreContainer", handleLoadMoreMovieRelated, "LOAD MORE");
+        } else {
+          removeLoadMoreButton("movieRelatedLoadMoreContainer");
         }
       } else {
-        document.getElementById(targetId).innerHTML = `<p class="text-zinc-500 text-xs col-span-full">No recommendations found.</p>`;
+        renderGrid(targetId, []);
+        removeLoadMoreButton("movieRelatedLoadMoreContainer");
       }
     }
-    return;
-  }
-
-  // TV Series Recommendations (Preserved intact)
-  let data = await fetchTMDB(`${type}/${id}/recommendations`);
-  if (!data || !data.results || data.results.length === 0) {
-    data = await fetchTMDB(`${type}/${id}/similar`);
-  }
-
-  if (data && data.results && data.results.length > 0) {
-    const filtered = data.results.filter(i => i.id !== id);
-    renderGrid(targetId, formatTMDB(filtered.slice(0, 5), type));
   } else {
-    const fallback = await fetchTMDB(`trending/${type}/week`);
-    if (fallback && fallback.results) {
-      renderGrid(targetId, formatTMDB(fallback.results.slice(0, 5), type));
+    const data = await fetchTMDB(`tv/${id}/recommendations?page=1`);
+    if (data && data.results && data.results.length > 0) {
+      renderGrid(targetId, formatTMDB(data.results.filter(i => i.id !== id), "tv"));
     } else {
-      document.getElementById(targetId).innerHTML = `<p class="text-zinc-500 text-xs col-span-full">No recommendations found.</p>`;
+      const fallback = await fetchTMDB(`tv/${id}/similar?page=1`);
+      if (fallback && fallback.results) {
+        renderGrid(targetId, formatTMDB(fallback.results.filter(i => i.id !== id), "tv"));
+      } else {
+        renderGrid(targetId, []);
+      }
     }
   }
 }
@@ -1510,25 +1663,17 @@ async function handleLoadMoreMovieRelated() {
   setLoadMoreState("movieRelatedLoadMoreContainer", true, "LOAD MORE");
 
   const nextPage = movieRelatedCurrentPage + 1;
-  let data = await fetchTMDB(`movie/${currentMovieRelatedMovieId}/recommendations?page=${nextPage}`);
-  
-  if (!data || !data.results || data.results.length === 0) {
-    data = await fetchTMDB(`movie/${currentMovieRelatedMovieId}/similar?page=${nextPage}`);
-  }
+  const data = await fetchTMDB(`movie/${currentMovieRelatedMovieId}/recommendations?page=${nextPage}`);
 
   if (data && data.results && data.results.length > 0) {
     movieRelatedCurrentPage = nextPage;
-    movieRelatedTotalPages = data.total_pages || movieRelatedTotalPages;
-
     const formatted = formatTMDB(data.results.filter(i => i.id !== currentMovieRelatedMovieId), "movie");
     const uniqueItems = formatted.filter(item => !displayedMovieRelatedIds.has(item.id));
     uniqueItems.forEach(item => displayedMovieRelatedIds.add(item.id));
 
-    if (uniqueItems.length > 0) {
-      renderGrid("movieRelatedGrid", uniqueItems, true);
-    }
+    renderGrid("movieRelatedGrid", uniqueItems, true);
 
-    if (movieRelatedCurrentPage < movieRelatedTotalPages) {
+    if (movieRelatedCurrentPage < movieRelatedTotalPages && uniqueItems.length > 0) {
       setLoadMoreState("movieRelatedLoadMoreContainer", false, "LOAD MORE");
     } else {
       removeLoadMoreButton("movieRelatedLoadMoreContainer");
@@ -1541,61 +1686,87 @@ async function handleLoadMoreMovieRelated() {
 }
 
 /* ==========================================================================
-   GLOBAL SEARCH SYSTEM WITH "LOAD MORE" PAGINATION
+   GLOBAL NAVBAR SEARCH & PAGINATION
    ========================================================================== */
 function setupSearch() {
-  const searchInput = document.getElementById("searchInput");
-  if (!searchInput) return;
-
+  const input = document.getElementById("searchInput");
+  const clearBtn = document.getElementById("clearSearch");
   let timer;
-  searchInput.addEventListener("input", (e) => {
-    clearTimeout(timer);
-    const q = e.target.value.trim();
-    if (q.length > 1) {
-      timer = setTimeout(() => executeSearch(q), 350);
-    } else if (q === "") {
-      clearSearch();
+
+  input.addEventListener("input", (e) => {
+    const query = e.target.value.trim();
+    if (query.length > 0) {
+      clearBtn.classList.remove("hidden");
+    } else {
+      clearBtn.classList.add("hidden");
     }
+
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      if (query.length >= 2) {
+        currentSearchQuery = query;
+        performSearch(query, 1);
+      } else if (query.length === 0) {
+        clearSearch();
+      }
+    }, 400);
   });
 }
 
-async function executeSearch(query) {
-  const currentRequestId = ++latestSearchRequestId;
-  document.getElementById("clearSearch").classList.remove("hidden");
-  document.querySelectorAll(".page-view").forEach(el => el.classList.add("hidden"));
-  document.getElementById("searchView").classList.remove("hidden");
+function clearSearch() {
+  const input = document.getElementById("searchInput");
+  const clearBtn = document.getElementById("clearSearch");
+  if (input) input.value = "";
+  if (clearBtn) clearBtn.classList.add("hidden");
 
-  // Reset Movie Search Pagination for new query
-  currentSearchQuery = query;
+  currentSearchQuery = "";
   searchCurrentPage = 1;
   searchTotalPages = 1;
   displayedMovieSearchIds.clear();
-  removeLoadMoreButton("searchLoadMoreContainer");
 
-  renderGridLoading("searchResultsGrid");
+  document.getElementById("searchView").classList.add("hidden");
+  switchPage("home");
+}
 
-  const data = await fetchTMDB(`search/multi?query=${encodeURIComponent(query)}&page=1`);
-  
-  if (currentRequestId !== latestSearchRequestId) return;
+async function performSearch(query, page = 1) {
+  const currentReqId = ++latestSearchRequestId;
 
-  if (data && data.results) {
+  if (page === 1) {
+    document.querySelectorAll(".page-view").forEach(el => el.classList.add("hidden"));
+    document.getElementById("searchView").classList.remove("hidden");
+    renderGridLoading("searchResultsGrid");
+    removeLoadMoreButton("searchLoadMoreContainer");
+    searchCurrentPage = 1;
+    searchTotalPages = 1;
+    displayedMovieSearchIds.clear();
+  }
+
+  const data = await fetchTMDB(`search/multi?query=${encodeURIComponent(query)}&page=${page}`);
+
+  if (currentReqId !== latestSearchRequestId) return;
+
+  if (data && data.results && data.results.length > 0) {
     searchTotalPages = data.total_pages || 1;
-    const results = data.results.filter(r => r.media_type === "movie" || r.media_type === "tv");
-    
-    // Store displayed movie IDs to prevent duplicates
-    results.forEach(r => {
-      if (r.media_type === "movie" || (!r.media_type && r.title)) {
-        displayedMovieSearchIds.add(r.id);
-      }
+    const filtered = data.results.filter(r => r.media_type === "movie" || r.media_type === "tv");
+    const formatted = formatTMDB(filtered);
+
+    const uniqueItems = formatted.filter(item => {
+      const itemKey = `${item.type}_${item.id}`;
+      if (displayedMovieSearchIds.has(itemKey)) return false;
+      displayedMovieSearchIds.add(itemKey);
+      return true;
     });
 
-    renderGrid("searchResultsGrid", formatTMDB(results));
+    renderGrid("searchResultsGrid", uniqueItems, page > 1);
 
-    if (searchCurrentPage < searchTotalPages) {
+    if (page < searchTotalPages && uniqueItems.length > 0) {
       renderLoadMoreButton("searchLoadMoreContainer", handleLoadMoreSearch, "LOAD MORE");
+    } else {
+      removeLoadMoreButton("searchLoadMoreContainer");
     }
   } else {
-    document.getElementById("searchResultsGrid").innerHTML = `<p class="text-zinc-500 text-sm col-span-full py-8 text-center">No matching titles found.</p>`;
+    if (page === 1) renderGrid("searchResultsGrid", []);
+    removeLoadMoreButton("searchLoadMoreContainer");
   }
 }
 
@@ -1606,51 +1777,11 @@ async function handleLoadMoreSearch() {
   setLoadMoreState("searchLoadMoreContainer", true, "LOAD MORE");
 
   const nextPage = searchCurrentPage + 1;
-  const data = await fetchTMDB(`search/multi?query=${encodeURIComponent(currentSearchQuery)}&page=${nextPage}`);
-
-  if (data && data.results) {
-    searchCurrentPage = nextPage;
-    searchTotalPages = data.total_pages || searchTotalPages;
-
-    const filtered = data.results.filter(r => r.media_type === "movie" || r.media_type === "tv");
-    const uniqueItems = [];
-
-    filtered.forEach(item => {
-      const isMovie = item.media_type === "movie" || (!item.media_type && item.title);
-      if (isMovie) {
-        if (!displayedMovieSearchIds.has(item.id)) {
-          displayedMovieSearchIds.add(item.id);
-          uniqueItems.push(item);
-        }
-      } else {
-        uniqueItems.push(item);
-      }
-    });
-
-    if (uniqueItems.length > 0) {
-      renderGrid("searchResultsGrid", formatTMDB(uniqueItems), true);
-    }
-
-    if (searchCurrentPage < searchTotalPages) {
-      setLoadMoreState("searchLoadMoreContainer", false, "LOAD MORE");
-    } else {
-      removeLoadMoreButton("searchLoadMoreContainer");
-    }
-  } else {
-    removeLoadMoreButton("searchLoadMoreContainer");
-  }
+  await performSearch(currentSearchQuery, nextPage);
+  searchCurrentPage = nextPage;
 
   isSearchLoadingMore = false;
-}
-
-function clearSearch() {
-  currentSearchQuery = "";
-  searchCurrentPage = 1;
-  searchTotalPages = 1;
-  displayedMovieSearchIds.clear();
-  removeLoadMoreButton("searchLoadMoreContainer");
-
-  document.getElementById("searchInput").value = "";
-  document.getElementById("clearSearch").classList.add("hidden");
-  switchPage("home");
+  if (searchCurrentPage < searchTotalPages) {
+    setLoadMoreState("searchLoadMoreContainer", false, "LOAD MORE");
+  }
 }
