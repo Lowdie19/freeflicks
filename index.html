@@ -462,25 +462,46 @@
     </div>
   </aside>
 
-  <!-- MOBILE FLOATING BACK-TO-TOP BUTTON -->
-  <button id="mobileBackToTop" aria-label="Back to top" class="fixed bottom-[72px] right-4 z-40 md:hidden opacity-0 pointer-events-none transition-all duration-300 transform translate-y-2 active:scale-95">
-    <div class="back-to-top-circle">
-      <i class="fa-solid fa-chevron-up text-xs"></i>
-    </div>
+<!-- FIXED MOBILE BOTTOM NAVIGATION WITH EQUAL GRID & DIVIDERS -->
+<div id="mobileBottomNav" class="fixed bottom-2 left-1/2 -translate-x-1/2 z-40 bg-[#0b0b0e]/85 backdrop-blur-xl border border-white/10 rounded-full px-2 py-2 md:hidden w-[92%] max-w-[380px] nav-grid-layout nav-gradient-shadow">
+
+  <!-- HOME -->
+  <button onclick="switchPage('home')" id="bottom-nav-home" class="bottom-nav-item text-brand flex flex-col items-center justify-center gap-1 active:scale-90 transition-transform duration-150 py-1">
+    <i class="fa-solid fa-house text-lg leading-none"></i>
+    <span class="text-[11px] font-medium leading-none tracking-tight">Home</span>
   </button>
 
-  <!-- FIXED MOBILE BOTTOM NAVIGATION -->
-  <div class="fixed bottom-0 left-0 right-0 z-40 bg-[#0b0b0e]/95 backdrop-blur-md border-t border-zinc-800/80 flex items-center justify-around py-2.5 md:hidden">
-    <button onclick="switchPage('home')" id="bottom-nav-home" class="bottom-nav-btn text-brand flex flex-col items-center gap-1 text-[10px] font-bold">
-      <i class="fa-solid fa-house text-base"></i> Home
-    </button>
-    <button onclick="focusMobileSearch()" class="bottom-nav-btn text-zinc-400 flex flex-col items-center gap-1 text-[10px] font-bold">
-      <i class="fa-solid fa-magnifying-glass text-base"></i> Search
-    </button>
-    <button onclick="toggleMobileDrawer(true)" class="bottom-nav-btn text-zinc-400 flex flex-col items-center gap-1 text-[10px] font-bold">
-      <i class="fa-solid fa-bars text-base"></i> Menu
+  <!-- DIVIDER 1 -->
+  <div class="nav-divider"></div>
+
+  <!-- SEARCH -->
+  <button onclick="focusMobileSearch()" class="bottom-nav-item text-zinc-400 hover:text-white flex flex-col items-center justify-center gap-1 active:scale-90 transition-transform duration-150 py-1">
+    <i class="fa-solid fa-magnifying-glass text-lg leading-none"></i>
+    <span class="text-[11px] font-medium leading-none tracking-tight">Search</span>
+  </button>
+
+  <!-- DIVIDER 2 -->
+  <div class="nav-divider"></div>
+
+  <!-- MENU -->
+  <button onclick="toggleMobileDrawer(true)" class="bottom-nav-item text-zinc-400 hover:text-white flex flex-col items-center justify-center gap-1 active:scale-90 transition-transform duration-150 py-1">
+    <i class="fa-solid fa-bars text-lg leading-none"></i>
+    <span class="text-[11px] font-medium leading-none tracking-tight">Menu</span>
+  </button>
+
+  <!-- TOP BUTTON WRAPPER (Includes Divider 3 & Top Button) -->
+  <div id="mobileBackToTopWrapper" class="nav-top-wrapper">
+    <!-- DIVIDER 3 -->
+    <div class="nav-divider"></div>
+    
+    <!-- TOP BUTTON -->
+    <button id="mobileBackToTop" aria-label="Back to top" class="bottom-nav-item text-zinc-400 hover:text-white flex flex-col items-center justify-center gap-1 active:scale-90 transition-transform duration-150 py-1 w-full">
+      <i class="fa-solid fa-chevron-up text-lg leading-none"></i>
+      <span class="text-[11px] font-medium leading-none tracking-tight">Top</span>
     </button>
   </div>
+
+</div>
 
   <script src="app.js"></script>
 </body>
