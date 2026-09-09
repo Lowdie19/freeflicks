@@ -37,7 +37,7 @@
   </script>
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body class="bg-[#0b0b0e] text-zinc-100 font-sans antialiased min-h-screen flex flex-col selection:bg-brand selection:text-black pb-16 md:pb-0">
+<body class="bg-[#0b0b0e] text-zinc-100 font-sans antialiased min-h-screen flex flex-col selection:bg-brand selection:text-black pb-20 md:pb-0">
 
   <!-- NAVBAR -->
   <nav class="sticky top-0 z-50 flex items-center justify-between px-4 md:px-8 py-3 bg-[#0b0b0e]/95 backdrop-blur-md border-b border-zinc-800/80">
@@ -257,7 +257,7 @@
         <div class="flex items-center gap-4">
           <button onclick="switchPage('platforms')" class="platform-back-btn" aria-label="Go back to Streaming Platforms">
             <div class="platform-back-circle">
-              <i class="fa-solid fa-chevron-left text-xs"></i>
+              <i class="fa-solid fa-arrow-left text-xs"></i>
             </div>
             <span class="platform-back-text">PLATFORMS</span>
           </button>
@@ -374,23 +374,23 @@
         <div id="movieServerList" class="flex flex-wrap gap-2"></div>
       </div>
       <div class="space-y-4 pt-4">
-        <h3 class="text-lg font-bold border-l-4 border-brand pl-3">You May Also Like</h3>
-        <div id="movieRelatedGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4"></div>
+        <h3 class="text-lg font-bold border-l-4 border-brand pl-3">You Might Also Like</h3>
+        <div id="movieRelatedGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
         <div id="movieRelatedLoadMoreContainer" class="pt-4 flex justify-center"></div>
       </div>
     </div>
 
-    <!-- 6. TV SERIES PLAYER VIEW -->
+    <!-- 6. TV PLAYER VIEW -->
     <div id="tvPlayerView" class="page-view hidden px-4 md:px-10 py-6 space-y-6 max-w-6xl mx-auto">
       <div class="aspect-video w-full bg-black rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl relative">
-        <iframe id="tvIframe" class="w-full h-full border-0" title="TV Series Player" allowfullscreen></iframe>
+        <iframe id="tvIframe" class="w-full h-full border-0" title="TV Player" allowfullscreen></iframe>
       </div>
       <div>
         <div>
           <div id="tvPlayerContext" class="text-xs font-semibold mb-1 flex items-center gap-1.5 flex-wrap">
-            <span class="text-brand font-bold">Series</span>
+            <span class="text-brand font-bold">TV Series</span>
             <span class="text-zinc-500">|</span>
-            <span id="tvPlayerContextDetail" class="text-zinc-400"></span>
+            <span id="tvPlayerContextDetail" class="text-zinc-400">Season 1 Episode 1</span>
           </div>
           <h1 id="tvPlayerTitle" class="text-2xl md:text-3xl font-black uppercase text-white italic"></h1>
         </div>
@@ -400,67 +400,20 @@
         <div id="tvServerList" class="flex flex-wrap gap-2"></div>
       </div>
       <div class="space-y-3">
-        <p class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Choose Season</p>
-        <div id="seasonTabs" class="flex flex-wrap gap-2"></div>
+        <h3 class="text-sm font-bold uppercase tracking-wider text-zinc-400">Seasons</h3>
+        <div id="seasonTabs" class="flex items-center gap-2 overflow-x-auto pb-2"></div>
       </div>
       <div class="space-y-3">
-        <p class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Episodes</p>
-        <div id="episodesGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3"></div>
+        <h3 class="text-sm font-bold uppercase tracking-wider text-zinc-400">Episodes</h3>
+        <div id="episodesGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-80 overflow-y-auto pr-1"></div>
       </div>
       <div class="space-y-4 pt-4">
-        <h3 class="text-lg font-bold border-l-4 border-brand pl-3">You May Also Like</h3>
-        <div id="tvRelatedGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4"></div>
+        <h3 class="text-lg font-bold border-l-4 border-brand pl-3">You Might Also Like</h3>
+        <div id="tvRelatedGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
       </div>
     </div>
 
   </main>
-
-  <!-- MOBILE OVERLAY & DRAWER MENU -->
-  <div id="mobileDrawerOverlay" class="fixed inset-0 bg-black/80 z-50 transition-opacity duration-300 opacity-0 pointer-events-none md:hidden"></div>
-  <aside id="mobileDrawer" class="fixed top-0 left-0 bottom-0 w-72 bg-[#0b0b0e] border-r border-zinc-800/80 z-50 p-6 flex flex-col justify-between transform -translate-x-full transition-transform duration-300 md:hidden">
-    <div class="space-y-6 overflow-y-auto max-h-full">
-      <div class="flex items-center justify-between pb-4 border-b border-zinc-800">
-        <div class="flex items-center gap-1 font-black text-xl tracking-tighter">
-          <span class="text-white">Popcorn</span>
-          <span class="bg-brand text-black px-1.5 py-0 rounded font-black text-lg">HUB</span>
-        </div>
-        <button id="closeMobileDrawer" aria-label="Close menu" class="text-zinc-400 hover:text-white p-2">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
-      </div>
-
-      <nav class="space-y-2">
-        <button onclick="switchPage('home')" id="drawer-nav-home" class="drawer-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition text-zinc-300 hover:text-brand hover:bg-zinc-900">
-          <i class="fa-solid fa-house w-5 text-center"></i> Home
-        </button>
-        <button onclick="switchPage('movies')" id="drawer-nav-movies" class="drawer-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition text-zinc-300 hover:text-brand hover:bg-zinc-900">
-          <i class="fa-solid fa-film w-5 text-center"></i> Movies
-        </button>
-        <button onclick="switchPage('tv')" id="drawer-nav-tv" class="drawer-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition text-zinc-300 hover:text-brand hover:bg-zinc-900">
-          <i class="fa-solid fa-tv w-5 text-center"></i> TV Series
-        </button>
-        <button onclick="switchPage('platforms')" id="drawer-nav-platforms" class="drawer-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition text-zinc-300 hover:text-brand hover:bg-zinc-900">
-          <i class="fa-solid fa-layer-group w-5 text-center"></i> Streaming Platforms
-        </button>
-        <button onclick="switchPage('watchlist')" id="drawer-nav-watchlist" class="drawer-nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition text-zinc-300 hover:text-brand hover:bg-zinc-900">
-          <div class="flex items-center gap-3">
-            <i class="fa-solid fa-bookmark w-5 text-center"></i> Watchlist
-          </div>
-          <span id="drawerWatchlistBadgeCount" class="hidden bg-secondary text-black font-extrabold text-[10px] px-2 py-0.5 rounded-full">0</span>
-        </button>
-      </nav>
-    </div>
-
-    <div class="pt-6 border-t border-zinc-800/80 space-y-3">
-      <button id="drawer-nav-install" onclick="handleInstallAppClick()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition text-zinc-300 hover:text-secondary hover:bg-zinc-900">
-        <i class="fa-solid fa-download w-5 text-center text-secondary"></i> <span id="installBtnText">Install App</span>
-      </button>
-      <div class="px-4 text-[11px] text-zinc-500 flex items-center justify-between font-semibold">
-        <span>PopcornHUB Web App</span>
-        <span class="text-brand">v2.0</span>
-      </div>
-    </div>
-  </aside>
 
   <!-- MOBILE BOTTOM NAV -->
   <div id="mobileBottomNav" class="md:hidden fixed bottom-3 left-3 right-3 z-40 bg-[#121216]/95 backdrop-blur-md rounded-2xl border border-zinc-800/80 px-2 py-1.5 nav-gradient-shadow nav-grid-layout">
@@ -469,7 +422,7 @@
     <div class="flex items-center justify-center">
       <button onclick="switchPage('home')" id="bottom-nav-home" class="bottom-nav-btn py-1 px-2 text-brand transition flex flex-col items-center justify-center gap-0.5" aria-label="Go to Home">
         <i class="fa-solid fa-house text-base"></i>
-        <span class="text-[10px] font-bold uppercase tracking-wider">Home</span>
+        <span class="text-[10px] font-extrabold uppercase tracking-wider">Home</span>
       </button>
     </div>
 
@@ -479,7 +432,7 @@
     <div class="flex items-center justify-center">
       <button onclick="focusMobileSearch()" class="py-1 px-2 text-zinc-400 hover:text-white transition flex flex-col items-center justify-center gap-0.5" aria-label="Quick Search">
         <i class="fa-solid fa-magnifying-glass text-base"></i>
-        <span class="text-[10px] font-bold uppercase tracking-wider">Search</span>
+        <span class="text-[10px] font-extrabold uppercase tracking-wider">Search</span>
       </button>
     </div>
 
@@ -489,7 +442,7 @@
     <div class="flex items-center justify-center">
       <button onclick="toggleMobileDrawer(true)" class="py-1 px-2 text-zinc-400 hover:text-white transition flex flex-col items-center justify-center gap-0.5" aria-label="Open Drawer Menu">
         <i class="fa-solid fa-bars text-base"></i>
-        <span class="text-[10px] font-bold uppercase tracking-wider">Menu</span>
+        <span class="text-[10px] font-extrabold uppercase tracking-wider">Menu</span>
       </button>
     </div>
 
@@ -499,11 +452,57 @@
     <div class="nav-top-wrapper flex items-center justify-center">
       <button id="mobileBackToTop" class="py-1 px-2 text-zinc-400 hover:text-white transition flex flex-col items-center justify-center gap-0.5" aria-label="Scroll Back to Top">
         <i class="fa-solid fa-chevron-up text-base"></i>
-        <span class="text-[10px] font-bold uppercase tracking-wider">Top</span>
+        <span class="text-[10px] font-extrabold uppercase tracking-wider">Top</span>
       </button>
     </div>
 
   </div>
+
+  <!-- MOBILE SIDE DRAWER MENU -->
+  <div id="mobileDrawerOverlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 opacity-0 pointer-events-none transition-opacity duration-300"></div>
+  
+  <aside id="mobileDrawer" class="fixed top-0 left-0 bottom-0 w-72 bg-[#0b0b0e] border-r border-zinc-800/80 z-50 -translate-x-full transition-transform duration-300 flex flex-col justify-between p-6">
+    <div class="space-y-8">
+      <div class="flex items-center justify-between">
+        <a href="#" onclick="switchPage('home'); toggleMobileDrawer(false); return false;" class="flex items-center gap-1 font-black text-2xl tracking-tighter">
+          <span class="text-white font-extrabold">Popcorn</span>
+          <span class="bg-brand text-black px-2 py-0 rounded-lg font-black text-xl">HUB</span>
+        </a>
+        <button id="closeMobileDrawer" class="text-zinc-400 hover:text-white text-xl p-1" aria-label="Close Drawer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <nav class="space-y-2 text-sm font-semibold">
+        <button id="drawer-nav-home" onclick="switchPage('home')" class="drawer-nav-btn w-full text-left px-4 py-3 rounded-xl transition flex items-center gap-3 text-brand bg-zinc-900/80">
+          <i class="fa-solid fa-house text-base w-6 text-center"></i> Home
+        </button>
+        <button id="drawer-nav-movies" onclick="switchPage('movies')" class="drawer-nav-btn w-full text-left px-4 py-3 rounded-xl transition flex items-center gap-3 text-zinc-300 hover:text-white hover:bg-zinc-900">
+          <i class="fa-solid fa-film text-base w-6 text-center"></i> Movies
+        </button>
+        <button id="drawer-nav-tv" onclick="switchPage('tv')" class="drawer-nav-btn w-full text-left px-4 py-3 rounded-xl transition flex items-center gap-3 text-zinc-300 hover:text-white hover:bg-zinc-900">
+          <i class="fa-solid fa-tv text-base w-6 text-center"></i> TV Series
+        </button>
+        <button id="drawer-nav-platforms" onclick="switchPage('platforms')" class="drawer-nav-btn w-full text-left px-4 py-3 rounded-xl transition flex items-center gap-3 text-zinc-300 hover:text-white hover:bg-zinc-900">
+          <i class="fa-solid fa-layer-group text-base w-6 text-center"></i> Streaming Platforms
+        </button>
+        <button id="drawer-nav-watchlist" onclick="switchPage('watchlist')" class="drawer-nav-btn w-full text-left px-4 py-3 rounded-xl transition flex items-center gap-3 text-zinc-300 hover:text-white hover:bg-zinc-900 justify-between">
+          <span class="flex items-center gap-3"><i class="fa-solid fa-bookmark text-base w-6 text-center"></i> Watchlist</span>
+          <span id="drawerWatchlistBadgeCount" class="hidden bg-secondary text-black font-extrabold text-[10px] px-2 py-0.5 rounded-full">0</span>
+        </button>
+      </nav>
+    </div>
+
+    <div class="pt-6 border-t border-zinc-800/80 space-y-4">
+      <button id="drawer-nav-install" onclick="handleInstallAppClick()" class="w-full text-left px-4 py-3 rounded-xl transition flex items-center gap-3 text-zinc-300 hover:text-secondary hover:bg-zinc-900 font-semibold text-sm">
+        <i class="fa-solid fa-download text-base w-6 text-center"></i> <span id="installBtnText">Install App</span>
+      </button>
+
+      <div class="text-[11px] text-zinc-500 font-medium leading-relaxed">
+        PopcornHUB &copy; 2026. Free streaming platform.
+      </div>
+    </div>
+  </aside>
 
   <script src="app.js"></script>
 </body>
