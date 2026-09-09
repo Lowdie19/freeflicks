@@ -1,508 +1,346 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PopcornHUB - Stream Movies, TV & Anime</title>
-  
-  <!-- PWA & Mobile Web App Meta Tags -->
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#0b0b0e" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="PopcornHUB" />
-  <link rel="apple-touch-icon" href="icon.png" />
+/* Lime Green Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
 
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              DEFAULT: '#b5f818',
-              hover: '#9ee000',
-              dark: '#121212'
-            },
-            secondary: {
-              DEFAULT: '#e7b34e',
-              hover: '#d49d37'
-            }
-          }
-        }
-      }
-    }
-  </script>
-  <link rel="stylesheet" href="styles.css" />
-</head>
-<body class="bg-[#0b0b0e] text-zinc-100 font-sans antialiased min-h-screen flex flex-col selection:bg-brand selection:text-black pb-16 md:pb-0">
+::-webkit-scrollbar-track {
+  background: #121212;
+}
 
-  <!-- NAVBAR -->
-  <nav class="sticky top-0 z-50 flex items-center justify-between px-4 md:px-8 py-3 bg-[#0b0b0e]/95 backdrop-blur-md border-b border-zinc-800/80">
-    <div class="flex items-center gap-8">
-      <a href="#" onclick="switchPage('home'); return false;" class="flex items-center gap-1 font-black text-2xl tracking-tighter hover:opacity-90 transition" aria-label="PopcornHUB Home">
-        <span class="text-white font-extrabold">Popcorn</span>
-        <span class="bg-brand text-black px-2 py-0 rounded-lg font-black text-xl">HUB</span>
-      </a>
-      <div class="hidden md:flex items-center gap-6 text-sm font-semibold text-zinc-400">
-        <button onclick="switchPage('home')" id="nav-home" class="nav-btn text-brand transition"><i class="fa-solid fa-house text-xs mr-1"></i> Home</button>
-        <button onclick="switchPage('movies')" id="nav-movies" class="nav-btn hover:text-brand transition"><i class="fa-solid fa-film text-xs mr-1"></i> Movies</button>
-        <button onclick="switchPage('tv')" id="nav-tv" class="nav-btn hover:text-brand transition"><i class="fa-solid fa-tv text-xs mr-1"></i> TV Series</button>
-        <button onclick="switchPage('platforms')" id="nav-platforms" class="nav-btn hover:text-brand transition"><i class="fa-solid fa-layer-group text-xs mr-1"></i> Streaming Platforms</button>
-        <button onclick="switchPage('watchlist')" id="nav-watchlist" class="nav-btn hover:text-brand transition flex items-center gap-1">
-          <i class="fa-solid fa-bookmark text-xs mr-1"></i> Watchlist
-          <span id="watchlistBadgeCount" class="hidden bg-secondary text-black font-extrabold text-[10px] px-1.5 py-0.2 rounded-full">0</span>
-        </button>
-      </div>
-    </div>
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 4px;
+}
 
-    <!-- SEARCH BAR -->
-    <div class="relative flex items-center">
-      <input id="searchInput" type="text" placeholder="Search" aria-label="Search"
-        class="bg-zinc-900/90 text-xs md:text-sm text-zinc-200 rounded-full px-4 py-2 pl-9 pr-8 focus:outline-none focus:ring-2 focus:ring-brand border border-zinc-800 w-40 sm:w-64 focus:sm:w-80 transition-all">
-      <i class="fa-solid fa-magnifying-glass text-zinc-500 absolute left-3 text-xs"></i>
-      <button id="clearSearch" onclick="clearSearch()" aria-label="Clear search" class="hidden absolute right-3 text-zinc-500 hover:text-white text-xs">✕</button>
-    </div>
-  </nav>
+::-webkit-scrollbar-thumb:hover {
+  background: #b5f818;
+}
 
-  <!-- APP VIEW CONTAINER -->
-  <main class="flex-grow">
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
 
-    <!-- SEARCH VIEW -->
-    <section id="searchView" class="hidden px-4 md:px-10 py-6 space-y-4">
-      <h2 class="text-xl font-bold border-l-4 border-brand pl-3">Search Results</h2>
-      <div id="searchResultsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
-      <div id="searchLoadMoreContainer" class="pt-4 flex justify-center"></div>
-    </section>
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 
-    <!-- 1. HOME VIEW -->
-    <div id="homeView" class="page-view space-y-12 pb-12">
-      
-      <!-- PREMIUM CAROUSEL HERO BANNER -->
-      <header id="heroBanner" class="relative w-full h-[55vh] sm:h-[65vh] md:h-[80vh] overflow-hidden bg-zinc-950 flex items-end">
-        <!-- Background Backdrops -->
-        <div id="heroBg" class="hero-bg absolute inset-0 bg-cover bg-center"></div>
-        <div class="absolute inset-0 bg-gradient-to-t from-[#0b0b0e] via-[#0b0b0e]/50 to-transparent"></div>
-        <div class="absolute inset-0 bg-gradient-to-r from-[#0b0b0e] via-[#0b0b0e]/40 to-transparent"></div>
+/* Electric Lime Glow Effect */
+.lime-glow:hover {
+  box-shadow: 0 0 15px rgba(181, 248, 24, 0.35);
+  border-color: rgba(181, 248, 24, 0.5);
+}
 
-        <!-- Animated Content -->
-        <div id="heroContainer" class="hero-active relative z-10 w-full px-4 md:px-12 pb-10 sm:pb-12 flex items-end justify-between">
-          <div class="max-w-2xl space-y-3 sm:space-y-4 hero-content">
-            <div class="flex items-center gap-2">
-              <span class="bg-brand text-black text-[10px] font-black tracking-widest px-2.5 py-1 rounded-md uppercase">TRENDING NOW</span>
-              <span id="heroBadgeYear" class="text-xs text-zinc-300 font-bold uppercase tracking-wider">MOVIE • 2026</span>
-            </div>
-            <!-- Main Hero Title -->
-            <h1 id="heroTitle" class="text-3xl sm:text-5xl md:text-7xl font-black tracking-tight text-white drop-shadow-2xl uppercase leading-none line-clamp-2 italic">Loading...</h1>
-            <!-- Main Hero Overview -->
-            <p id="heroOverview" class="text-zinc-300 text-xs sm:text-sm line-clamp-2 sm:line-clamp-3 leading-relaxed drop-shadow max-w-xl"></p>
-            
-            <div class="flex items-center gap-3 pt-2">
-              <button id="heroPlayBtn" class="bg-brand hover:bg-brand-hover text-black font-extrabold px-5 sm:px-7 py-3 sm:py-3.5 rounded-xl flex items-center gap-2 text-xs sm:text-sm transition shadow-lg shadow-brand/20 active:scale-95">
-                <i class="fa-solid fa-play"></i> WATCH NOW
-              </button>
-              <button id="heroWatchlistBtn" class="glass-btn text-white font-extrabold px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl flex items-center gap-2 text-xs sm:text-sm transition active:scale-95">
-                <i class="fa-solid fa-plus mr-1"></i> WATCHLIST
-              </button>
-            </div>
-          </div>
+/* Secondary Color Warm Amber Glow Effect */
+.amber-glow:hover {
+  box-shadow: 0 0 15px rgba(231, 179, 78, 0.35);
+  border-color: rgba(231, 179, 78, 0.5);
+}
 
-          <!-- SIDE THUMBNAIL PREVIEW LIST (DESKTOP) -->
-          <div id="heroThumbnails" class="hidden lg:flex flex-col gap-2.5 z-20 pb-2"></div>
-        </div>
+.bg-secondary {
+  background-color: rgba(231, 179, 78, 1);
+}
 
-        <!-- CAROUSEL INDICATOR DOTS -->
-        <div id="heroDots" class="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2"></div>
-      </header>
+.text-secondary {
+  color: rgba(231, 179, 78, 1);
+}
 
-      <!-- PROMO BANNER -->
-      <section class="px-4 md:px-10">
-        <div class="bg-gradient-to-r from-zinc-900 via-zinc-900/90 to-zinc-900 border border-brand/30 rounded-2xl p-6 sm:p-8 text-center space-y-2 relative overflow-hidden">
-          <h2 class="text-2xl md:text-4xl font-black tracking-tight flex items-center justify-center gap-2 sm:gap-3">
-            <img src="icon.png" alt="PopcorHuB Icon" class="promo-title-icon" />
-            <span><span class="text-white">POPCORN</span><span class="text-brand">HUB</span></span>
-          </h2>
-          <p class="text-xs md:text-sm text-zinc-400">The Official Home for Free Movies & TV Series Streaming</p>
-        </div>
-      </section>
+.border-secondary {
+  border-color: rgba(231, 179, 78, 0.5);
+}
 
-      <!-- ROW 1: TRENDING TODAY -->
-      <section class="px-4 sm:px-6 lg:px-12 space-y-4">
-        <div class="flex items-center gap-4">
-          <h2 class="text-xl font-black tracking-widest border-l-4 border-brand pl-5 whitespace-nowrap uppercase">
-            TRENDING TODAY
-          </h2>
-          <div class="h-px flex-1 bg-white/10"></div>
-        </div>
-        <div id="homeTrendingTodayGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 mobile-horizontal-scroll"></div>
-      </section>
+/* PREMIUM ANIMATIONS & TRANSITIONS */
+.hero-content {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
 
-      <!-- ROW 2: TRENDING THIS WEEK -->
-      <section class="px-4 sm:px-6 lg:px-12 space-y-4">
-        <div class="flex items-center gap-4">
-          <h2 class="text-xl font-black tracking-widest border-l-4 border-brand pl-5 whitespace-nowrap uppercase">
-            TRENDING THIS WEEK
-          </h2>
-          <div class="h-px flex-1 bg-white/10"></div>
-        </div>
-        <div id="homeTrendingWeekGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 mobile-horizontal-scroll"></div>
-      </section>
+.hero-active .hero-content {
+  opacity: 1;
+  transform: translateY(0);
+}
 
-      <!-- ROW 3: POPULAR MOVIES -->
-      <section class="px-4 sm:px-6 lg:px-12 space-y-4">
-        <div class="flex items-center gap-4">
-          <h2 class="text-xl font-black tracking-widest border-l-4 border-brand pl-5 whitespace-nowrap uppercase">
-            POPULAR MOVIES
-          </h2>
-          <div class="h-px flex-1 bg-white/10"></div>
-        </div>
-        <div id="homePopularMoviesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 mobile-horizontal-scroll"></div>
-      </section>
+.hero-bg {
+  opacity: 0;
+  transition: opacity 0.8s ease-in-out;
+  background-size: cover;
+  background-position: center;
+}
 
-      <!-- ROW 4: POPULAR TV SERIES -->
-      <section class="px-4 sm:px-6 lg:px-12 space-y-4">
-        <div class="flex items-center gap-4">
-          <h2 class="text-xl font-black tracking-wide border-l-4 border-brand pl-5 whitespace-nowrap flex items-center gap-2 uppercase">
-            POPULAR TV SERIES
-          </h2>
-          <div class="h-px flex-1 bg-white/10"></div>
-        </div>
-        <div id="homePopularTvGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 mobile-horizontal-scroll"></div>
-      </section>
-    </div>
+.hero-bg.loaded {
+  opacity: 1;
+}
 
-    <!-- 2. MOVIES CATALOG VIEW -->
-    <div id="moviesView" class="page-view hidden px-4 md:px-10 py-8 space-y-6">
-      <div>
-        <h1 class="text-3xl font-black text-white uppercase tracking-tight">PopcornHUB Movies</h1>
-        <p class="text-xs text-zinc-400 mt-1">Explore amazing movies from around the world.</p>
-      </div>
+.glass-btn {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
 
-      <div class="bg-zinc-900/90 border border-zinc-800 p-3 rounded-xl flex flex-wrap items-center gap-3">
-        <input id="movieSearchFilter" type="text" placeholder="Search movies..." class="bg-zinc-800 text-xs px-3 py-2 rounded-lg border border-zinc-700 flex-grow focus:outline-none focus:border-brand">
-        <select id="movieGenreFilter" class="bg-zinc-800 text-xs px-3 py-2 rounded-lg border border-zinc-700 focus:outline-none text-zinc-200">
-          <option value="">ALL GENRES</option>
-          <option value="28">Action</option>
-          <option value="12">Adventure</option>
-          <option value="16">Animation</option>
-          <option value="35">Comedy</option>
-          <option value="80">Crime</option>
-          <option value="18">Drama</option>
-          <option value="14">Fantasy</option>
-          <option value="27">Horror</option>
-          <option value="10749">Romance</option>
-          <option value="878">Sci-Fi</option>
-          <option value="53">Thriller</option>
-        </select>
-        <select id="movieSortFilter" class="bg-zinc-800 text-xs px-3 py-2 rounded-lg border border-zinc-700 focus:outline-none text-zinc-200">
-          <option value="popularity.desc">POPULAR</option>
-          <option value="vote_average.desc">TOP RATED</option>
-          <option value="primary_release_date.desc">NEWEST</option>
-        </select>
-        <button id="movieFilterBtn" class="bg-brand text-black font-bold text-xs px-5 py-2 rounded-lg hover:bg-brand-hover transition">FILTER</button>
-      </div>
+.glass-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
 
-      <div id="moviesCatalogGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
-      <div id="moviesSeeMoreContainer" class="pt-4 flex justify-center"></div>
-    </div>
+/* PROMO BANNER ICON STYLING */
+.promo-title-icon {
+  height: 1.25em;
+  width: auto;
+  display: inline-block;
+  vertical-align: middle;
+  transform: rotate(-30deg);
+  object-fit: contain;
+}
 
-    <!-- 3. TV SERIES CATALOG VIEW -->
-    <div id="tvView" class="page-view hidden px-4 md:px-10 py-8 space-y-6">
-      <div>
-        <h1 class="text-3xl font-black text-white uppercase tracking-tight">PopcornHUB TV Series</h1>
-        <p class="text-xs text-zinc-400 mt-1">Explore amazing TV shows & series from around the world.</p>
-      </div>
+/* Hero Overview Mobile Responsive Behavior */
+@media (max-width: 767px) and (orientation: landscape) {
+  #heroOverview {
+    display: none !important;
+  }
+}
 
-      <div class="bg-zinc-900/90 border border-zinc-800 p-3 rounded-xl flex flex-wrap items-center gap-3">
-        <input id="tvSearchFilter" type="text" placeholder="Search TV series..." class="bg-zinc-800 text-xs px-3 py-2 rounded-lg border border-zinc-700 flex-grow focus:outline-none focus:border-brand">
-        <select id="tvGenreFilter" class="bg-zinc-800 text-xs px-3 py-2 rounded-lg border border-zinc-700 focus:outline-none text-zinc-200">
-          <option value="">ALL GENRES</option>
-          <option value="10759">Action & Adventure</option>
-          <option value="16">Animation</option>
-          <option value="35">Comedy</option>
-          <option value="80">Crime</option>
-          <option value="99">Documentary</option>
-          <option value="18">Drama</option>
-          <option value="10751">Family</option>
-          <option value="10762">Kids</option>
-          <option value="9648">Mystery</option>
-          <option value="10765">Sci-Fi & Fantasy</option>
-        </select>
-        <select id="tvSortFilter" class="bg-zinc-800 text-xs px-3 py-2 rounded-lg border border-zinc-700 focus:outline-none text-zinc-200">
-          <option value="popularity.desc">POPULAR</option>
-          <option value="vote_average.desc">TOP RATED</option>
-          <option value="first_air_date.desc">NEWEST</option>
-        </select>
-        <button id="tvFilterBtn" class="bg-brand text-black font-bold text-xs px-5 py-2 rounded-lg hover:bg-brand-hover transition">FILTER</button>
-      </div>
+@media (max-width: 767px) and (orientation: portrait) {
+  #heroOverview {
+    display: -webkit-box !important;
+  }
+}
 
-      <div id="tvCatalogGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
-      <div id="tvSeeMoreContainer" class="pt-4 flex justify-center"></div>
-    </div>
+/* Card Skeleton Animation */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .5; }
+}
 
-    <!-- STREAMING PLATFORMS SELECTION VIEW -->
-    <div id="platformsView" class="page-view hidden px-4 md:px-10 py-8 space-y-6">
-      <div>
-        <h1 class="text-3xl font-black text-white uppercase tracking-tight">Streaming Platforms</h1>
-        <p class="text-xs text-zinc-400 mt-1">Select a streaming service to view its catalog available in the Philippines.</p>
-      </div>
-      <div id="platformsSelectionGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-4"></div>
-    </div>
+.animate-pulse-bg {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
 
-    <!-- DYNAMIC PLATFORM CATALOG VIEW -->
-    <div id="platformCatalogView" class="page-view hidden px-4 md:px-10 py-8 space-y-6">
-      <div class="flex items-center justify-between border-b border-zinc-800 pb-4">
-        <div class="flex items-center gap-4">
-          <button onclick="switchPage('platforms')" class="platform-back-btn" aria-label="Go back to Streaming Platforms">
-            <div class="platform-back-circle">
-              <i class="fa-solid fa-arrow-left text-xs"></i>
-            </div>
-            <span class="platform-back-text">PLATFORMS</span>
-          </button>
-          <div>
-            <h1 id="platformCatalogTitle" class="text-2xl md:text-3xl font-black text-white uppercase tracking-tight">Platform</h1>
-            <p class="text-xs text-zinc-400 mt-0.5">Explore amazing movies & TV Series available on this streaming platform.</p>
-          </div>
-        </div>
-      </div>
+/* BOOKMARK / TRASH ICON STYLING */
+.card-bookmark-ribbon {
+  top: 0.5rem;
+  left: 0.5rem;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0.25rem;
+  line-height: 1;
+  font-size: 1rem;
+  color: rgb(161 161 170);
+  outline: none;
+  transition: color 0.2s ease, transform 0.15s ease, opacity 0.2s ease;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
 
-      <div class="bg-zinc-900/90 border border-zinc-800 p-3 rounded-xl flex flex-wrap items-center gap-3">
-        <input id="platformSearchFilter" type="text" placeholder="Search platform titles..." class="bg-zinc-800 text-xs px-3 py-2 rounded-lg border border-zinc-700 flex-grow focus:outline-none focus:border-brand">
-        
-        <!-- Type Filter Buttons -->
-        <div class="flex items-center bg-zinc-800 p-1 rounded-lg border border-zinc-700">
-          <button id="platformTypeAll" onclick="setPlatformTypeFilter('all')" class="px-3 py-1 text-xs font-bold rounded-md bg-brand text-black transition">All</button>
-          <button id="platformTypeMovies" onclick="setPlatformTypeFilter('movie')" class="px-3 py-1 text-xs font-bold rounded-md text-zinc-400 hover:text-white transition">Movies</button>
-          <button id="platformTypeTv" onclick="setPlatformTypeFilter('tv')" class="px-3 py-1 text-xs font-bold rounded-md text-zinc-400 hover:text-white transition">TV Series</button>
-        </div>
+@media (hover: hover) {
+  .card-bookmark-ribbon:hover {
+    color: rgba(231, 179, 78, 1) !important;
+  }
+}
 
-        <select id="platformGenreFilter" class="bg-zinc-800 text-xs px-3 py-2 rounded-lg border border-zinc-700 focus:outline-none text-zinc-200">
-          <option value="">ALL GENRES</option>
-          <option value="28">Action</option>
-          <option value="12">Adventure</option>
-          <option value="16">Animation</option>
-          <option value="35">Comedy</option>
-          <option value="80">Crime</option>
-          <option value="18">Drama</option>
-          <option value="14">Fantasy</option>
-          <option value="27">Horror</option>
-          <option value="10749">Romance</option>
-          <option value="878">Sci-Fi</option>
-          <option value="53">Thriller</option>
-        </select>
+.card-bookmark-ribbon:active {
+  color: rgba(231, 179, 78, 1) !important;
+  transform: scale(0.88);
+}
 
-        <select id="platformSortFilter" class="bg-zinc-800 text-xs px-3 py-2 rounded-lg border border-zinc-700 focus:outline-none text-zinc-200">
-          <option value="popularity.desc">POPULAR</option>
-          <option value="vote_average.desc">TOP RATED</option>
-        </select>
+/* WATCHLIST REMOVAL FADE ANIMATION */
+.card-watchlist-removing {
+  opacity: 0;
+  transform: scale(0.95);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+}
 
-        <button id="platformFilterBtn" class="bg-brand text-black font-bold text-xs px-5 py-2 rounded-lg hover:bg-brand-hover transition">FILTER</button>
-      </div>
+/* STREAMING PLATFORMS HOVER GLOW */
+.platform-card-glow:hover {
+  box-shadow: 0 0 20px rgba(181, 248, 24, 0.15);
+}
 
-      <div id="platformCatalogGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
-      <div id="platformLoadMoreContainer" class="pt-4 flex justify-center"></div>
-    </div>
+/* MINIMALIST LOAD MORE BUTTON DESIGN */
+.load-more-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px 16px;
+  outline: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.2s ease;
+}
 
-    <!-- WATCHLIST VIEW -->
-    <div id="watchlistView" class="page-view hidden px-4 md:px-10 py-8 space-y-6">
-      <div class="flex items-center justify-between border-b border-zinc-800 pb-4">
-        <div>
-          <h1 class="text-3xl font-black text-white uppercase tracking-tight">My Watchlist</h1>
-          <p class="text-xs text-zinc-400 mt-1">Your saved movies and TV series for easy access.</p>
-        </div>
-      </div>
-      <div id="watchlistGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
-    </div>
+.load-more-btn:active {
+  transform: scale(0.95);
+}
 
-    <!-- 4. CONTENT DETAILS VIEW -->
-    <div id="detailView" class="page-view hidden px-4 md:px-12 py-8 space-y-8 max-w-6xl mx-auto">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-        <div class="aspect-[2/3] rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-900 shadow-2xl">
-          <img id="detailPoster" class="w-full h-full object-cover" src="" alt="Poster">
-        </div>
-        <div class="md:col-span-2 space-y-5">
-          <h1 id="detailTitle" class="text-3xl md:text-5xl font-black uppercase tracking-tight italic"></h1>
-          <div class="flex flex-wrap items-center gap-2 text-xs uppercase font-semibold">
-            <span id="detailBadgeType" class="bg-brand text-black font-bold text-[10px] px-2 py-0.5 rounded"></span>
-            <span id="detailBadgeRating" class="bg-zinc-800 text-brand border border-brand/30 font-bold text-[10px] px-2 py-0.5 rounded">★ 0.0</span>
-            <span id="detailBadgeYear" class="bg-zinc-800 text-zinc-300 font-semibold text-[10px] px-2 py-0.5 rounded">2026</span>
-            <span id="detailGenres" class="text-zinc-400 ml-1"></span>
-          </div>
-          <p id="detailOverview" class="text-zinc-400 text-sm leading-relaxed"></p>
-          <div class="flex flex-wrap items-center gap-4 pt-2">
-            <button id="detailPlayNowBtn" class="bg-brand hover:bg-brand-hover text-black font-extrabold px-8 py-3 rounded-xl flex items-center gap-2 text-sm transition">
-              <i class="fa-solid fa-play"></i> PLAY NOW
-            </button>
-            <button id="detailWatchlistBtn" class="bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 font-extrabold px-6 py-3 rounded-xl flex items-center gap-2 text-sm transition">
-              <i class="fa-solid fa-plus mr-1"></i> WATCHLIST
-            </button>
-          </div>
-        </div>
-      </div>
+.load-more-circle {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid #52525b; /* Thin grey outline */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a1a1aa; /* Secondary grey chevron */
+  margin-bottom: 6px;
+  transition: border-color 0.25s ease, color 0.25s ease, transform 0.25s ease;
+}
 
-      <!-- OFFICIAL TRAILER SECTION -->
-      <div class="space-y-3 border-t border-zinc-800/80 pt-6">
-        <h3 class="text-sm font-bold uppercase tracking-wider text-zinc-400">Official Trailer</h3>
-        <div class="aspect-video w-full max-w-3xl bg-zinc-900 rounded-xl overflow-hidden border border-zinc-800 flex items-center justify-center">
-          <iframe id="trailerFrame" class="w-full h-full hidden" src="" title="Official Trailer" allowfullscreen></iframe>
-          <div id="trailerFallback" class="text-zinc-500 text-sm font-medium flex items-center gap-2">
-            <i class="fa-solid fa-circle-exclamation text-brand"></i> Official trailer unavailable.
-          </div>
-        </div>
-      </div>
-    </div>
+.load-more-text {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #a1a1aa;
+  text-transform: uppercase;
+  transition: color 0.25s ease;
+}
 
-    <!-- 5. MOVIE PLAYER VIEW -->
-    <div id="moviePlayerView" class="page-view hidden px-4 md:px-10 py-6 space-y-6 max-w-6xl mx-auto">
-      <div class="aspect-video w-full bg-black rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl relative">
-        <iframe id="movieIframe" class="w-full h-full border-0" title="Movie Player" allowfullscreen></iframe>
-      </div>
-      <div>
-        <div>
-          <div id="moviePlayerContext" class="text-xs font-semibold mb-1 flex items-center gap-1.5 flex-wrap">
-            <span class="text-brand font-bold">Movie</span>
-            <span class="text-zinc-500">|</span>
-            <span id="moviePlayerContextTitle" class="text-zinc-400"></span>
-          </div>
-          <h1 id="moviePlayerTitle" class="text-2xl md:text-3xl font-black uppercase text-white italic"></h1>
-        </div>
-      </div>
-      <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-xl space-y-3">
-        <p class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Select Source Server</p>
-        <div id="movieServerList" class="flex flex-wrap gap-2"></div>
-      </div>
-      <div class="space-y-4 pt-4">
-        <h3 class="text-lg font-bold border-l-4 border-brand pl-3">You May Also Like</h3>
-        <div id="movieRelatedGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4"></div>
-        <div id="movieRelatedLoadMoreContainer" class="pt-4 flex justify-center"></div>
-      </div>
-    </div>
+/* Hover & Active States (Transitions to Primary Brand Color: #b5f818) */
+.load-more-btn:hover .load-more-circle,
+.load-more-btn:focus-visible .load-more-circle {
+  border-color: #b5f818;
+  color: #b5f818;
+  transform: translateY(2px);
+}
 
-    <!-- 6. TV SERIES PLAYER VIEW -->
-    <div id="tvPlayerView" class="page-view hidden px-4 md:px-10 py-6 space-y-6 max-w-6xl mx-auto">
-      <div class="aspect-video w-full bg-black rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl relative">
-        <iframe id="tvIframe" class="w-full h-full border-0" title="TV Series Player" allowfullscreen></iframe>
-      </div>
-      <div>
-        <div>
-          <div id="tvPlayerContext" class="text-xs font-semibold mb-1 flex items-center gap-1.5 flex-wrap">
-            <span class="text-brand font-bold">Series</span>
-            <span class="text-zinc-500">|</span>
-            <span id="tvPlayerContextDetail" class="text-zinc-400"></span>
-          </div>
-          <h1 id="tvPlayerTitle" class="text-2xl md:text-3xl font-black uppercase text-white italic"></h1>
-        </div>
-      </div>
-      <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-xl space-y-3">
-        <p class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Select Source Server</p>
-        <div id="tvServerList" class="flex flex-wrap gap-2"></div>
-      </div>
-      <div class="space-y-3">
-        <p class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Choose Season</p>
-        <div id="seasonTabs" class="flex flex-wrap gap-2"></div>
-      </div>
-      <div class="space-y-3">
-        <p class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Episodes</p>
-        <div id="episodesGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3"></div>
-      </div>
-      <div class="space-y-4 pt-4">
-        <h3 class="text-lg font-bold border-l-4 border-brand pl-3">You May Also Like</h3>
-        <div id="tvRelatedGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4"></div>
-      </div>
-    </div>
+.load-more-btn:hover .load-more-text,
+.load-more-btn:focus-visible .load-more-text {
+  color: #b5f818;
+}
 
-  </main>
+/* Loading State Animation */
+.load-more-btn.is-loading .load-more-circle {
+  border-color: #b5f818;
+  color: #b5f818;
+  animation: spin 1s linear infinite;
+}
 
-  <!-- MOBILE OVERLAY & DRAWER MENU -->
-  <div id="mobileDrawerOverlay" class="fixed inset-0 bg-black/80 z-50 transition-opacity duration-300 opacity-0 pointer-events-none md:hidden"></div>
-  <aside id="mobileDrawer" class="fixed top-0 left-0 bottom-0 w-72 bg-[#0b0b0e] border-r border-zinc-800/80 z-50 p-6 flex flex-col justify-between transform -translate-x-full transition-transform duration-300 md:hidden">
-    <div class="space-y-6 overflow-y-auto max-h-full">
-      <div class="flex items-center justify-between pb-4 border-b border-zinc-800">
-        <div class="flex items-center gap-1 font-black text-xl tracking-tighter">
-          <span class="text-white">Popcorn</span>
-          <span class="bg-brand text-black px-1.5 py-0 rounded font-black text-lg">HUB</span>
-        </div>
-        <button id="closeMobileDrawer" aria-label="Close menu" class="text-zinc-400 hover:text-white p-2">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
-      </div>
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
 
-      <nav class="space-y-2">
-        <button onclick="switchPage('home')" id="drawer-nav-home" class="drawer-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition text-zinc-300 hover:text-brand hover:bg-zinc-900">
-          <i class="fa-solid fa-house w-5 text-center"></i> Home
-        </button>
-        <button onclick="switchPage('movies')" id="drawer-nav-movies" class="drawer-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition text-zinc-300 hover:text-brand hover:bg-zinc-900">
-          <i class="fa-solid fa-film w-5 text-center"></i> Movies
-        </button>
-        <button onclick="switchPage('tv')" id="drawer-nav-tv" class="drawer-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition text-zinc-300 hover:text-brand hover:bg-zinc-900">
-          <i class="fa-solid fa-tv w-5 text-center"></i> TV Series
-        </button>
-        <button onclick="switchPage('platforms')" id="drawer-nav-platforms" class="drawer-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition text-zinc-300 hover:text-brand hover:bg-zinc-900">
-          <i class="fa-solid fa-layer-group w-5 text-center"></i> Streaming Platforms
-        </button>
-        <button onclick="switchPage('watchlist')" id="drawer-nav-watchlist" class="drawer-nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition text-zinc-300 hover:text-brand hover:bg-zinc-900">
-          <div class="flex items-center gap-3">
-            <i class="fa-solid fa-bookmark w-5 text-center"></i> Watchlist
-          </div>
-          <span id="drawerWatchlistBadgeCount" class="hidden bg-secondary text-black font-extrabold text-[10px] px-2 py-0.5 rounded-full">0</span>
-        </button>
-      </nav>
-    </div>
+/* MINIMALIST < PLATFORM BACK BUTTON DESIGN */
+.platform-back-btn {
+  display: inline-flex;
+  flex-direction: column; /* text goes below circle */
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px 12px;
+  outline: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.2s ease;
+  gap: 5px; /* space between circle and text */
+}
 
-    <div class="pt-6 border-t border-zinc-800/80 space-y-3">
-      <button id="drawer-nav-install" onclick="handleInstallAppClick()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition text-zinc-300 hover:text-secondary hover:bg-zinc-900">
-        <i class="fa-solid fa-download w-5 text-center text-secondary"></i> <span id="installBtnText">Install App</span>
-      </button>
-      <div class="px-4 text-[11px] text-zinc-500 flex items-center justify-between font-semibold">
-        <span>PopcornHUB Web App</span>
-        <span class="text-brand">v2.0</span>
-      </div>
-    </div>
-  </aside>
+.platform-back-btn:active {
+  transform: scale(0.95);
+}
 
-<!-- FIXED MOBILE BOTTOM NAVIGATION WITH EQUAL GRID & DIVIDERS -->
-<div id="mobileBottomNav" class="fixed bottom-2 left-1/2 -translate-x-1/2 z-40 bg-[#0b0b0e]/85 backdrop-blur-xl border border-white/10 rounded-full px-2 py-2 md:hidden w-[92%] max-w-[380px] nav-grid-layout nav-gradient-shadow">
+.platform-back-circle {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid #52525b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a1a1aa;
+  transition: border-color 0.25s ease, color 0.25s ease, transform 0.25s ease;
+}
 
-  <!-- HOME -->
-  <button onclick="switchPage('home')" id="bottom-nav-home" class="bottom-nav-item text-brand flex flex-col items-center justify-center gap-1 active:scale-90 transition-transform duration-150 py-1">
-    <i class="fa-solid fa-house text-lg leading-none"></i>
-    <span class="text-[11px] font-medium leading-none tracking-tight">Home</span>
-  </button>
+.platform-back-text {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #a1a1aa;
+  text-transform: uppercase;
+  transition: color 0.25s ease;
+}
 
-  <!-- DIVIDER 1 -->
-  <div class="nav-divider"></div>
+.platform-back-btn:hover .platform-back-circle,
+.platform-back-btn:focus-visible .platform-back-circle {
+  border-color: #b5f818;
+  color: #b5f818;
+  transform: translateY(-2px); /* moves upward instead of left */
+}
 
-  <!-- SEARCH -->
-  <button onclick="focusMobileSearch()" class="bottom-nav-item text-zinc-400 hover:text-white flex flex-col items-center justify-center gap-1 active:scale-90 transition-transform duration-150 py-1">
-    <i class="fa-solid fa-magnifying-glass text-lg leading-none"></i>
-    <span class="text-[11px] font-medium leading-none tracking-tight">Search</span>
-  </button>
+.platform-back-btn:hover .platform-back-text,
+.platform-back-btn:focus-visible .platform-back-text {
+  color: #b5f818;
+}
 
-  <!-- DIVIDER 2 -->
-  <div class="nav-divider"></div>
+/* GRID LAYOUT FOR EQUAL SPACING */
+.nav-grid-layout {
+  display: grid;
+  /* Dynamic grid setup for 3 columns + dividers */
+  grid-template-columns: 1fr auto 1fr auto 1fr 0fr;
+  align-items: center;
+  transition: grid-template-columns 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
-  <!-- MENU -->
-  <button onclick="toggleMobileDrawer(true)" class="bottom-nav-item text-zinc-400 hover:text-white flex flex-col items-center justify-center gap-1 active:scale-90 transition-transform duration-150 py-1">
-    <i class="fa-solid fa-bars text-lg leading-none"></i>
-    <span class="text-[11px] font-medium leading-none tracking-tight">Menu</span>
-  </button>
+/* when the button show: devide it to 4 Equal Columns */
+.nav-grid-layout.has-top-btn {
+  grid-template-columns: 1fr auto 1fr auto 1fr 1fr;
+}
 
-  <!-- TOP BUTTON WRAPPER (Includes Divider 3 & Top Button) -->
-  <div id="mobileBackToTopWrapper" class="nav-top-wrapper">
-    <!-- DIVIDER 3 -->
-    <div class="nav-divider"></div>
-    
-    <!-- TOP BUTTON -->
-    <button id="mobileBackToTop" aria-label="Back to top" class="bottom-nav-item text-zinc-400 hover:text-white flex flex-col items-center justify-center gap-1 active:scale-90 transition-transform duration-150 py-1 w-full">
-      <i class="fa-solid fa-chevron-up text-lg leading-none"></i>
-      <span class="text-[11px] font-medium leading-none tracking-tight">Top</span>
-    </button>
-  </div>
+/* DIVIDER STYLING */
+.nav-divider {
+  width: 1px;
+  height: 24px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+}
 
-</div>
+/* SMOOTH TOP WRAPPER ANIMATION */
+.nav-top-wrapper {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  opacity: 0;
+  transform: scale(0.85);
+  pointer-events: none;
+  transition: opacity 0.25s ease-in-out, transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
-  <script src="app.js"></script>
-</body>
-</html>
+.nav-grid-layout.has-top-btn .nav-top-wrapper {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+/* GRADIENT SHADOW EFFECT */
+.nav-gradient-shadow {
+  box-shadow: 
+    0 12px 25px -4px rgb(0, 0, 0),          /* Dark core shadow */
+    0 20px 50px -5px rgb(0, 0, 0);    /* Soft Brand/Glow tint gradient at bottom */
+}
+
+/* CINEMATIC BOTTOM VIGNETTE OVERLAY */
+body::after {
+  content: "";
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 20vh;
+  min-height: 120px;
+  max-height: 280px;
+  pointer-events: none;
+  z-index: 30; /* Below Mobile Bottom Nav (z-40) and Drawers (z-50) */
+  background: radial-gradient(
+    100% 100% at 50% 100%,
+    rgba(11, 11, 14, 0.85) 0%,
+    rgba(11, 11, 14, 0.5) 45%,
+    rgba(11, 11, 14, 0) 100%
+  );
+}
+
